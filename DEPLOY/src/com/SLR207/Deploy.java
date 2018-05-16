@@ -1,3 +1,5 @@
+package com.SLR207;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -21,7 +23,7 @@ public class Deploy {
 		String l, slavePath = "/tmp/castelluccio/", userPrefix = "dgallitelli@", slaveFile = "slave.jar", domain = ".enst.fr";
 
 		try {
-			br = new BufferedReader(new FileReader("./machines.txt"));
+			br = new BufferedReader(new FileReader("src/machines.txt"));
 			machines = new ArrayList<>();
 			String sCurrentLine;
 
