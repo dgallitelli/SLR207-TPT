@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 public class Master {
 
     private static String userPrefix = "dgallitelli@";
-    private static String domain = "enst.fr";
+    private static String domain = ".enst.fr";
     private static String targetPath = "/tmp/dgallitelli/splits/";
 
     public static void main(String[] args) throws IOException {
