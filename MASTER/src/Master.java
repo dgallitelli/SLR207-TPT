@@ -12,8 +12,15 @@ public class Master {
     private static String targetPath = "/tmp/dgallitelli/splits/";
     private static String slavePath = "/tmp/dgallitelli/slave.jar";
 
+    public Master(){}
+
     public static void main(String[] args) throws IOException {
-        //oldFoo();
+        Master ms = new Master();
+        // ms.oldFoo();
+        ms.newFoo();
+    }
+
+    private void newFoo() throws IOException {
 
         // Goal : Make Master copy three files from /tmp/dgallitelli/splits/ to 3 machines
         ProcessBuilder pb;
@@ -69,11 +76,11 @@ public class Master {
         }
 
         // Print the mapping of files and machines
-        for (String m2 : targetMachines.keySet()) System.out.println("UM" + targetMachines.get(m2) + " - " + m2);
-
+        for (String m2 : targetMachines.keySet()) System.out.println("UM"
+                + targetMachines.get(m2) + " - " + m2);
     }
 
-    private static void oldFoo(){
+    private void oldFoo(){
         long startTime, endTime;
 
         ProcessBuilder pb = new ProcessBuilder("java", "-jar", "/tmp/castelluccio/slave.jar");
