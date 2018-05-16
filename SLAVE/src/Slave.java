@@ -48,8 +48,23 @@ public class Slave {
             sc.close();
             br.close();
             fr.close();
+            // Print the results
+            checkResults(fileOutput);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Function to print the contents of the file just written
+     * @param file the file to print
+     */
+    private void checkResults(String file) throws FileNotFoundException {
+
+        FileReader fr = new FileReader(file);
+        BufferedReader br = new BufferedReader(fr);
+        Scanner sc = new Scanner(br);
+
+        while (sc.hasNextLine()) System.out.println(sc.nextLine());
     }
 }
