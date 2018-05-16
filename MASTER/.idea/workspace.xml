@@ -20,8 +20,8 @@
       <file leaf-file-name="Master.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/Master.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="142">
-              <caret line="34" lean-forward="true" selection-start-line="34" selection-end-line="34" />
+            <state relative-caret-position="160">
+              <caret line="71" column="113" lean-forward="true" selection-start-line="71" selection-start-column="113" selection-end-line="71" selection-end-column="113" />
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="method#oldFoo#0;class#Master#0" />
@@ -146,12 +146,12 @@
       <updated>1525871222154</updated>
       <workItem from="1525871223666" duration="2751000" />
       <workItem from="1525874481389" duration="2313000" />
-      <workItem from="1526473928518" duration="5062000" />
+      <workItem from="1526473928518" duration="5268000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="10126000" />
+    <option name="totallyTimeSpent" value="10332000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="25" width="1366" height="704" extended-state="6" />
@@ -231,8 +231,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/Master.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="142">
-          <caret line="34" lean-forward="true" selection-start-line="34" selection-end-line="34" />
+        <state relative-caret-position="160">
+          <caret line="71" column="113" lean-forward="true" selection-start-line="71" selection-start-column="113" selection-end-line="71" selection-end-column="113" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="method#oldFoo#0;class#Master#0" />

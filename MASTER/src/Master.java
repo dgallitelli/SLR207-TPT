@@ -66,10 +66,10 @@ public class Master {
             pb = new ProcessBuilder("java", "-jar", slavePath);
             pb.start();
             System.out.println("[OK] Launched slave.jar on machine " + m);
-
-            // Print the mapping of files and machines
-            for (String m2 : targetMachines.keySet()) System.out.println("UM"+i+" - "+m2);
         }
+
+        // Print the mapping of files and machines
+        for (String m2 : targetMachines.keySet()) System.out.println("UM" + targetMachines.get(m2) + " - " + m2);
 
     }
 
