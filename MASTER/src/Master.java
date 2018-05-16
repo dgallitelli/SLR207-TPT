@@ -1,9 +1,11 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+// import java.util.concurrent.TimeUnit;
 
 public class Master {
 
@@ -12,7 +14,7 @@ public class Master {
     private static String targetPath = "/tmp/dgallitelli/splits/";
     private static String slavePath = "/tmp/dgallitelli/slave.jar";
 
-    public Master(){}
+    private Master(){}
 
     public static void main(String[] args) throws IOException {
         Master ms = new Master();
@@ -34,6 +36,9 @@ public class Master {
         targetMachines.put("c129-21", 0);
         targetMachines.put("c129-22", 1);
         targetMachines.put("c129-23", 2);
+
+        // Define the MR map
+        Map<String, List<String>> results = new HashMap<>();
 
         // Create the process for the creation of the folder, then copy
         for (String machine : targetMachines.keySet()) {
@@ -71,56 +76,27 @@ public class Master {
 
             // ProcessBuilder to run slave program from /tmp/dgallitelli/
             pb = new ProcessBuilder("java", "-jar", slavePath);
-            pb.start();
+            p = pb.start();
             System.out.println("[OK] Launched slave.jar on machine " + m);
+            // Receive the output from the Slave currently running, update the map
+            input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            while ((l = input.readLine()) != null) {
+                if (results.containsKey(l)) {
+                    results.get(l).add("UM" + targetMachines.get(machine));
+                } else {
+                    List<String> newList = new ArrayList<>();
+                    newList.add("UM" + targetMachines.get(machine));
+                    results.put(l, newList);
+                }
+            }
         }
 
         // Print the mapping of files and machines
-        for (String m2 : targetMachines.keySet()) System.out.println("UM"
-                + targetMachines.get(m2) + " - " + m2);
-    }
+        /*for (String m2 : targetMachines.keySet()) System.out.println("UM"
+                + targetMachines.get(m2) + " - " + m2);*/
 
-    private void oldFoo(){
-        long startTime, endTime;
-
-        ProcessBuilder pb = new ProcessBuilder("java", "-jar", "/tmp/castelluccio/slave.jar");
-        // Redirect Error to stream
-        pb.redirectErrorStream(true);
-        pb.inheritIO();
-
-        try {
-            startTime = System.currentTimeMillis();
-            // Start the process
-            Process p = pb.start();
-
-            boolean b = p.waitFor(3, TimeUnit.SECONDS);
-            if (!b) {
-                // Timeout hit
-                p.destroy();
-                throw new InterruptedException();
-            }
-
-            // Normal termination
-
-            // Get the word from stream
-            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            StringBuilder builder = new StringBuilder(); String line;
-            while ((line = reader.readLine()) != null) {
-                builder.append(line);
-                builder.append(System.getProperty("line.separator"));
-            }
-            String result = builder.toString();
-
-            endTime = System.currentTimeMillis();
-
-            // Print output
-            System.out.println(result);
-            System.out.println("MASTER: "+(endTime-startTime)+" ms");
-
-        } catch (InterruptedException e) {
-            System.out.println("Timeout hit. Try again.");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // Print the results
+        for (String r : results.keySet())
+            System.out.println(r + " - <" + results.get(r).toString() + ">");
     }
 }
