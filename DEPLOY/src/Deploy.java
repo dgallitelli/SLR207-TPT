@@ -1,5 +1,3 @@
-package com.SLR207;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -16,22 +14,29 @@ import java.util.List;
 public class Deploy {
 	
 	public static void main(String[] args) {
-		BufferedReader br = null, input = null;
-		List<String> machines = null;
-		ProcessBuilder pb = null;
-		Process p = null;
-		String l, slavePath = "/tmp/dgallitelli/", userPrefix = "dgallitelli@", slaveFile = "slave.jar", domain = ".enst.fr";
+		BufferedReader br = null, input;
+		List<String> machines;
+		ProcessBuilder pb;
+		Process p;
+		String l;
+		String slavePath = "/tmp/dgallitelli/";
+		String userPrefix = "dgallitelli@";
+		String slaveFile = "slave.jar";
+		String domain = ".enst.fr";
 
 		try {
 			br = new BufferedReader(new FileReader("src/machines.txt"));
 			machines = new ArrayList<>();
 			String sCurrentLine;
 
-			while ((sCurrentLine = br.readLine()) != null) machines.add(userPrefix+sCurrentLine);
+			while ((sCurrentLine = br.readLine()) != null) {
+                machines.add(userPrefix+sCurrentLine);
+            }
 			
 			br.close();
 			
 			for (String m : machines) {
+                System.out.println("[BEGIN] Starting connection to machine "+m);
 				// ProcessBuilder for checking connection with hostname
 				pb = new ProcessBuilder("ssh", m, "hostname");
 				pb.redirectErrorStream(true);
@@ -50,16 +55,16 @@ public class Deploy {
 				pb = new ProcessBuilder("ssh", m, "mkdir -p "+slavePath);
 				pb.redirectErrorStream(true);
 				// Process
-				p = pb.start();
+				pb.start();
 				System.out.println("[OK] Created dir on machine "+m);
 				
 				// ProcessBuilder for copying slave to remote
 				pb = new ProcessBuilder("scp", slavePath+slaveFile, m+":"+slavePath);
 				pb.redirectErrorStream(true);
 				// Process
-				p = pb.start();
+				pb.start();
 				System.out.println("[OK] Copied slaveFile on machine "+m);
-				
+
 				// ProcessBuilder for executing java
 				pb = new ProcessBuilder("ssh", m, "java -jar "+slavePath+slaveFile);
 				pb.redirectErrorStream(true);
