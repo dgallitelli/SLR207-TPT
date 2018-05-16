@@ -20,7 +20,7 @@ public class Deploy {
 		List<String> machines = null;
 		ProcessBuilder pb = null;
 		Process p = null;
-		String l, slavePath = "/tmp/castelluccio/", userPrefix = "dgallitelli@", slaveFile = "slave.jar", domain = ".enst.fr";
+		String l, slavePath = "/tmp/dgallitelli/", userPrefix = "dgallitelli@", slaveFile = "slave.jar", domain = ".enst.fr";
 
 		try {
 			br = new BufferedReader(new FileReader("src/machines.txt"));
