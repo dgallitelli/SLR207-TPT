@@ -1,4 +1,6 @@
-public class Slave {
+package com.SLR207;
+
+public class Main {
 
     public static void main(String[] args) {
 
