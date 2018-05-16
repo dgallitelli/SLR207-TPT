@@ -1,10 +1,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.ProcessBuilder;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -26,16 +23,15 @@ public class Master {
         int i;
 
         // Define the target machines
-        Map<String, Integer> targetMachines;
-        targetMachines = new HashMap<>();
+        Map<String, Integer> targetMachines = new HashMap<>();
         targetMachines.put("c129-21", 0);
         targetMachines.put("c129-22", 1);
         targetMachines.put("c129-23", 2);
 
         // Create the process for the creation of the folder, then copy
         for (String machine : targetMachines.keySet()) {
-            m = userPrefix + machine + domain;
-            i = targetMachines.get(m);
+            m = String.format("%s%s%s", userPrefix, machine, domain);
+            i = targetMachines.get(machine);
 
             // Start connection process
             System.out.println("[BEGIN] Starting connection to machine " + m);
