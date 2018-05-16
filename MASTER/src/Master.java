@@ -40,7 +40,7 @@ public class Master {
             input = new BufferedReader(new InputStreamReader(p.getInputStream()));
             l = userPrefix + input.readLine() + domain;
             if (!l.equals(m)) {
-                System.out.println("[ERR] Can't connect to machine " + m);
+                System.out.println("[ERR] Can't connect to machine " + m + " where l = "+l);
                 continue;
             }
             System.out.println("[OK] Connection available with machine " + m);
