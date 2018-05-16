@@ -3,7 +3,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.ProcessBuilder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Master {
@@ -11,6 +13,7 @@ public class Master {
     private static String userPrefix = "dgallitelli@";
     private static String domain = ".enst.fr";
     private static String targetPath = "/tmp/dgallitelli/splits/";
+    private static String slavePath = "/tmp/dgallitelli/slave.jar";
 
     public static void main(String[] args) throws IOException {
         //oldFoo();
@@ -19,27 +22,32 @@ public class Master {
         ProcessBuilder pb;
         Process p;
         BufferedReader input;
-        String l;
+        String l, m;
+        int i;
 
         // Define the target machines
-        List<String> targetMachines;
-        targetMachines = new ArrayList<>();
-        targetMachines.add("dgallitelli@c129-21.enst.fr");
-        targetMachines.add("dgallitelli@c129-22.enst.fr");
-        targetMachines.add("dgallitelli@c129-23.enst.fr");
+        Map<String, Integer> targetMachines;
+        targetMachines = new HashMap<>();
+        targetMachines.put("c129-21", 0);
+        targetMachines.put("c129-22", 1);
+        targetMachines.put("c129-23", 2);
 
         // Create the process for the creation of the folder, then copy
-        for (String m : targetMachines) {
+        for (String machine : targetMachines.keySet()) {
+            m = userPrefix + machine + domain;
+            i = targetMachines.get(m);
+
+            // Start connection process
             System.out.println("[BEGIN] Starting connection to machine " + m);
+
             // ProcessBuilder for checking connection with hostname
             pb = new ProcessBuilder("ssh", m, "hostname");
             pb.redirectErrorStream(true);
-            // Process
             p = pb.start();
             // Get output
             input = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            l = userPrefix + input.readLine() + domain;
-            if (!l.equals(m)) {
+            l = input.readLine();
+            if (!l.equals(machine)) {
                 System.out.println("[ERR] Can't connect to machine " + m + " where l = "+l);
                 continue;
             }
@@ -48,23 +56,29 @@ public class Master {
             // ProcessBuilder for mkdir
             pb = new ProcessBuilder("ssh", m, "mkdir -p " + targetPath);
             pb.redirectErrorStream(true);
-            // Process
             pb.start();
             System.out.println("[OK] Created dir on machine " + m);
 
-            // ProcessBuilder for copying slave to remote
-            pb = new ProcessBuilder("scp", targetPath+"*", m + ":" + targetPath+"*");
+            // ProcessBuilder for copying splitfile to remote
+            pb = new ProcessBuilder("scp", targetPath+"S"+i+".txt",
+                    m + ":" + targetPath+"*"+"S"+i+".txt");
             pb.redirectErrorStream(true);
-            // Process
             pb.start();
             System.out.println("[OK] Copied targetFiles on machine " + m);
+
+            // ProcessBuilder to run slave program from /tmp/dgallitelli/
+            pb = new ProcessBuilder("java", "-jar", slavePath);
+            pb.start();
+            System.out.println("[OK] Launched slave.jar on machine " + m);
+
+            // Print the mapping of files and machines
+            for (String m2 : targetMachines.keySet()) System.out.println("UM"+i+" - "+m2);
         }
 
     }
 
     private static void oldFoo(){
-        String output;
-        long startTime, endTime, totalTime;
+        long startTime, endTime;
 
         ProcessBuilder pb = new ProcessBuilder("java", "-jar", "/tmp/castelluccio/slave.jar");
         // Redirect Error to stream
