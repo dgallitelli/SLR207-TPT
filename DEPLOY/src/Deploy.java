@@ -25,7 +25,7 @@ public class Deploy {
 		String domain = ".enst.fr";
 
 		try {
-			br = new BufferedReader(new FileReader("src/machines.txt"));
+			br = new BufferedReader(new FileReader("./machines.txt"));
 			machines = new ArrayList<>();
 			String sCurrentLine;
 
