@@ -108,5 +108,7 @@ public class Slave {
         Scanner sc = new Scanner(br);
 
         while (sc.hasNextLine()) System.out.println(sc.nextLine());
+        
+        sc.close();
     }
 }
