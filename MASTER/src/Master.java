@@ -98,5 +98,6 @@ public class Master {
         // Print the results
         for (String r : results.keySet())
             System.out.println(r + " - <" + results.get(r).toString() + ">");
+        
     }
 }

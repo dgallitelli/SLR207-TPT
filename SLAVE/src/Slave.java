@@ -91,6 +91,7 @@ public class Slave {
             fr.close();
             // Print the results
             checkResults(fileOutput);
+            
         } catch (IOException e) {
             e.printStackTrace();
         }
