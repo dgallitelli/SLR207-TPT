@@ -11,7 +11,9 @@ public class Master {
 
     private static String userPrefix = "dgallitelli@";
     private static String domain = ".enst.fr";
-    private static String targetPath = "/tmp/dgallitelli/splits/";
+    private static String splitsPath = "/tmp/dgallitelli/splits/";
+    private static String mapsPath = "/tmp/dgallitelli/maps/";
+    private static String reducesPath = "/tmp/dgallitelli/reduces/";
     private static String slavePath = "/tmp/dgallitelli/Slave.jar";
 
     private Master(){}
@@ -38,7 +40,7 @@ public class Master {
         targetMachines.put("c128-23", 2);
 
         // Define the MR map
-        Map<String, List<String>> results = new HashMap<>();
+        Map<String, List<String>> mapResults = new HashMap<>();
 
         // Create the process for the creation of the folder, then copy
         for (String machine : targetMachines.keySet()) {
@@ -62,7 +64,7 @@ public class Master {
             System.out.println("[OK] Connection available with machine " + m);
 
             // ProcessBuilder for mkdir
-            pb = new ProcessBuilder("ssh", m, "mkdir -p " + targetPath);
+            pb = new ProcessBuilder("ssh", m, "mkdir -p " + splitsPath+" "+mapsPath+" "+reducesPath);
             pb.redirectErrorStream(true);
             pb.start();
             System.out.println("[OK] Created dir on machine " + m);
@@ -74,39 +76,70 @@ public class Master {
             System.out.println("[OK] Copied slaveFile on machine " + m);
 
             // ProcessBuilder for copying splitfile to remote
-            pb = new ProcessBuilder("scp", targetPath+"S"+i+".txt",
-                    m + ":" + targetPath);
+            pb = new ProcessBuilder("scp", splitsPath+"S"+i+".txt",
+                    m + ":" + splitsPath);
             pb.redirectErrorStream(true);
             pb.start();
             System.out.println("[OK] Copied targetFiles on machine " + m);
 
             // ProcessBuilder to run slave program in MAP MODE from /tmp/dgallitelli/
-            pb = new ProcessBuilder("ssh", m, "java -jar "+slavePath+" 0 "+targetPath+"S"+i+".txt");
+            pb = new ProcessBuilder("ssh", m, "java -jar "+slavePath+" 0 "+splitsPath+"S"+i+".txt");
             p = pb.start();
-            System.out.println("[OK] Launched slave.jar on machine " + m);
+            System.out.println("[OK] Launched slave.jar MAP MODE on machine " + m);
             // Receive the output from the Slave currently running, update the map
             input = new BufferedReader(new InputStreamReader(p.getInputStream()));
             while ((l = input.readLine()) != null) {
-                if (results.containsKey(l)) {
-                    results.get(l).add("UM" + targetMachines.get(machine));
+                if (mapResults.containsKey(l)) {
+                    mapResults.get(l).add("UM" + targetMachines.get(machine));
                 } else {
                     List<String> newList = new ArrayList<>();
                     newList.add("UM" + targetMachines.get(machine));
-                    results.put(l, newList);
+                    mapResults.put(l, newList);
                 }
             }
-            
-            // Use the targetMachine dictionary to copy UMx files
-            
         }
 
-        // Print the mapping of files and machines
-        /*for (String m2 : targetMachines.keySet()) System.out.println("UM"
-                + targetMachines.get(m2) + " - " + m2);*/
-
         // Print the results
-        for (String r : results.keySet())
-            System.out.println(r + " - <" + results.get(r).toString() + ">");
+        for (String r : mapResults.keySet())
+            System.out.println(r + " - <" + mapResults.get(r).toString() + ">");
+        
+        // String machine = (String) targetMachines.keySet().toArray()[0];
+        String machine = "c128-23";
+        m = String.format("%s%s%s", userPrefix, machine, domain);
+        
+        // [SHUFFLE PHASE]
+        // Look for UMx files to send to the appropriate machine
+        // targetMachine contains as value the x in UMx - mapResults contains the keys-UMx map
+        // TODO : can be optimized!
+        for (String machine2 : targetMachines.keySet()) {
+            String m2 = String.format("%s%s%s", userPrefix, machine2, domain);
+            i = targetMachines.get(machine2);
+        	// Every machine has to send their file UMx.txt, if any to the current machine
+            pb = new ProcessBuilder("scp", m2+":"+splitsPath+"UM"+i+".txt", m + ":" + mapsPath);
+            pb.redirectErrorStream(true);
+            pb.start();
+        }
+        System.out.println("[OK] SHUFFLE PHASE IS DONE - everything has been sent to machine "+m);
+        
+        i = targetMachines.get(machine);
+        
+        // [REDUCE PHASE]
+        // New process on target machine to run Slave in REDUCE MODE
+        StringBuilder UMPath = new StringBuilder();
+        UMPath.append(slavePath).append(" 1 ").append("Car").append(mapsPath).append("SM").append(i).append(".txt ");
+        for (String machine2 : targetMachines.keySet())
+        	UMPath.append(mapsPath).append("UM").append(targetMachines.get(machine2)).append(".txt ");
+        System.out.println(UMPath.toString());
+        pb = new ProcessBuilder("ssh", m, "java -jar "+UMPath.toString());
+        p = pb.start();
+        System.out.println("[OK] Launched Slave.jar REDUCE MODE on machine " + m);
+        
+        // [REDUCE PHASE 2]
+        // New process on target machine to run Slave in REDUCE MODE 2
+        pb = new ProcessBuilder("ssh", m, 
+        		"java -jar "+slavePath+" 1 "+mapsPath+"SM"+i+".txt "+reducesPath+"RM"+i+".txt ");
+        p = pb.start();
+        System.out.println("[OK] Launched Slave.jar REDUCE MODE 2 on machine " + m);
         
     }
 }

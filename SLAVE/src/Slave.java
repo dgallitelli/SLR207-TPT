@@ -79,8 +79,7 @@ public class Slave {
 	    checkResults(fileOutput);
     }
 
-    @SuppressWarnings("unused")
-	private void map2(){
+   	private void map2(){
         // Get the file number
         String[] items = fileToMap.split("/");
         String numberOfFile = items[items.length-1].split("")[1];
@@ -131,9 +130,12 @@ public class Slave {
         BufferedReader br;
         Scanner sc;
         String line;
+        
+        System.out.println(fileType);            
+        System.out.println(this.filesList.toString());
     	
     	if (fileType.equals("UM")) {
-    		// Reduce step 1
+    		// Reduce step 1 - From multiple UMx to one SMx
     		out = new PrintWriter(new BufferedWriter(new FileWriter(this.filesList.get(0))));
             // For every file in UMFiles
             for (String UM : this.filesList){
@@ -144,6 +146,7 @@ public class Slave {
                 // Read a line and update the SM file
                 while (sc.hasNextLine()){
                     line = sc.nextLine();
+                    System.out.println(line);
                     if (this.reduceKey.equals(line.split(" ")[0])){
                         // Write on output file a new line
                         out.write(line+"\n");
@@ -153,8 +156,9 @@ public class Slave {
                 br.close();
                 fr.close();
             }
+            out.close();
     	} else {
-    		// Reduce Step 2
+    		// Reduce Step 2 - from SMx to RMx
     		out = new PrintWriter(new BufferedWriter(new FileWriter(this.filesList.get(0))));
             fr = new FileReader(this.filesList.get(0));
             br = new BufferedReader(fr);
@@ -170,11 +174,9 @@ public class Slave {
             	out.write(key+" "+myMap.get(key).toString()+"\n");
             sc.close();
             br.close();
-            fr.close();
-        }            
-        out.close();
-        
-        // From SMx to RMx
+            fr.close();            
+            out.close();
+        }
     }
 
     /**
