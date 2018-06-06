@@ -33,7 +33,7 @@ public class Master {
 
         // Define the target machines
         Map<String, Integer> targetMachines = new HashMap<>();
-        targetMachines.put("c128-21", 0);
+        targetMachines.put("c128-24", 0);
         targetMachines.put("c128-22", 1);
         targetMachines.put("c128-23", 2);
 
@@ -67,9 +67,15 @@ public class Master {
             pb.start();
             System.out.println("[OK] Created dir on machine " + m);
 
+            // ProcessBuilder for copying slavefile to remote
+            pb = new ProcessBuilder("scp", slavePath, m + ":" + slavePath);
+            pb.redirectErrorStream(true);
+            pb.start();
+            System.out.println("[OK] Copied slaveFile on machine " + m);
+
             // ProcessBuilder for copying splitfile to remote
-            pb = new ProcessBuilder("scp", targetPath+"S"+i+".txt",
-                    m + ":" + targetPath+"*"+"S"+i+".txt");
+            pb = new ProcessBuilder("scp", targetPath+"S0"+i+".txt",
+                    m + ":" + targetPath);
             pb.redirectErrorStream(true);
             pb.start();
             System.out.println("[OK] Copied targetFiles on machine " + m);
