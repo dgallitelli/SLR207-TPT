@@ -12,7 +12,7 @@ public class Master {
     private static String userPrefix = "dgallitelli@";
     private static String domain = ".enst.fr";
     private static String targetPath = "/tmp/dgallitelli/splits/";
-    private static String slavePath = "/tmp/dgallitelli/slave.jar";
+    private static String slavePath = "/tmp/dgallitelli/Slave.jar";
 
     private Master(){}
 

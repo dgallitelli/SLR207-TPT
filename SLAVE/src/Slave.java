@@ -32,9 +32,9 @@ public class Slave {
         }
 
         Slave sl = new Slave(args);
-        //sl.map();
-        //sl.map2();
         try {
+            //sl.map();
+            //sl.map2();
             sl.reduce();
         } catch (IOException e) {
             e.printStackTrace();
@@ -42,7 +42,7 @@ public class Slave {
     }
 
     @SuppressWarnings("unused")
-	private void map() {
+	private void map() throws IOException{
         // Get the file number
         String[] items = fileToMap.split("/");
         String numberOfFile = items[items.length-1].split("")[1];
@@ -50,30 +50,26 @@ public class Slave {
         String line;
 
         // Read the file specified by the parameter
-        try {
-            FileReader fr = new FileReader(fileToMap);
-            BufferedReader br = new BufferedReader(fr);
-            Scanner sc = new Scanner(br);
-            // Get the file to write ready
-            PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileOutput)));
-
-            // Read a line and update the map
-            while (sc.hasNextLine()){
-                line = sc.nextLine();
-                items = line.split(" ");
-                for (String item : items) out.println(item + " " + "1");
-            }
-
-            // Close the handlers
-            out.close();
-            sc.close();
-            br.close();
-            fr.close();
-            // Print the results
-            checkResults(fileOutput);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+	    FileReader fr = new FileReader(fileToMap);
+	    BufferedReader br = new BufferedReader(fr);
+	    Scanner sc = new Scanner(br);
+	    // Get the file to write ready
+	    PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileOutput)));
+	
+	    // Read a line and update the map
+	    while (sc.hasNextLine()){
+	        line = sc.nextLine();
+	        items = line.split(" ");
+	        for (String item : items) out.println(item + " " + "1");
+	    }
+	
+	    // Close the handlers
+	    out.close();
+	    sc.close();
+	    br.close();
+	    fr.close();
+	    // Print the results
+	    checkResults(fileOutput);
     }
 
     @SuppressWarnings("unused")
@@ -117,31 +113,60 @@ public class Slave {
     }
 
     private void reduce() throws IOException {
+    	
+    	// Is it step 1 or 2 ? Check if this.outputFile is a SM or RM
+    	String[] outputBits = this.UMFiles.get(0).split("/");
+    	String fileType = outputBits[outputBits.length-1].substring(0, 2);
         // Get the file to write ready
-        PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(this.outputFile)));
+        PrintWriter out;
         // Variables for file read
         FileReader fr;
         BufferedReader br;
         Scanner sc;
         String line;
-        // For every file in UMFiles
-        for (String UM : this.UMFiles){
-            fr = new FileReader(UM);
+    	
+    	if (fileType.equals("UM")) {
+    		// Reduce step 1
+    		out = new PrintWriter(new BufferedWriter(new FileWriter(this.outputFile)));
+            // For every file in UMFiles
+            for (String UM : this.UMFiles){
+                fr = new FileReader(UM);
+                br = new BufferedReader(fr);
+                sc = new Scanner(br);
+                // Read a line and update the SM file
+                while (sc.hasNextLine()){
+                    line = sc.nextLine();
+                    if (this.reduceKey.equals(line.split(" ")[0])){
+                        // Write on output file a new line
+                        out.write(line+"\n");
+                    }
+                }
+                sc.close();
+                br.close();
+                fr.close();
+            }
+    	} else {
+    		// Reduce Step 2
+    		out = new PrintWriter(new BufferedWriter(new FileWriter(this.UMFiles.get(0))));
+            fr = new FileReader(this.outputFile);
             br = new BufferedReader(fr);
             sc = new Scanner(br);
-            // Read a line and update the map
+            // Read and reduce in hashmap
+            Map<String,Integer> myMap = new HashMap<>();
             while (sc.hasNextLine()){
                 line = sc.nextLine();
-                if (this.reduceKey.equals(line.split(" ")[0])){
-                    // Write on output file a new line
-                    out.write(line);
-                }
+                String[] splits = line.split(" ");
+                myMap.merge(splits[0], Integer.parseInt(splits[1]), Integer::sum);
             }
+            for (String key : myMap.keySet())
+            	out.write(key+" "+myMap.get(key).toString()+"\n");
             sc.close();
             br.close();
             fr.close();
-        }
+        }            
         out.close();
+        
+        // From SMx to RMx
     }
 
     /**
