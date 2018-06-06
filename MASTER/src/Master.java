@@ -33,9 +33,9 @@ public class Master {
 
         // Define the target machines
         Map<String, Integer> targetMachines = new HashMap<>();
-        targetMachines.put("c129-21", 0);
-        targetMachines.put("c129-22", 1);
-        targetMachines.put("c129-23", 2);
+        targetMachines.put("c128-21", 0);
+        targetMachines.put("c128-22", 1);
+        targetMachines.put("c128-23", 2);
 
         // Define the MR map
         Map<String, List<String>> results = new HashMap<>();
