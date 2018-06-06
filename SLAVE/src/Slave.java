@@ -5,9 +5,8 @@ public class Slave {
 
     private int opCode;
     private String fileToMap;
-    private List<String> UMFiles;
+    private List<String> filesList;
     private String reduceKey;
-    private String outputFile;
     private static String rootFolder = "/tmp/dgallitelli/";
 
     public Slave(String[] args) {
@@ -15,12 +14,13 @@ public class Slave {
         if (this.opCode == 0){
             // Mode mapping
             this.fileToMap = args[1];
-        } else {
+        } else if (this.opCode == 1){
             this.reduceKey = args[1];
-            this.outputFile = args[2];
-            this.UMFiles = new ArrayList<>();
-            for (int i = 3; i<args.length; i++)
-                this.UMFiles.add(args[i]);
+            this.filesList = new ArrayList<>();
+            for (int i = 2; i<args.length; i++)
+                this.filesList.add(args[i]);
+        } else {
+        	System.out.println("Error: opCode must be 0/1");
         }
     }
 
@@ -115,7 +115,7 @@ public class Slave {
     private void reduce() throws IOException {
     	
     	// Is it step 1 or 2 ? Check if this.outputFile is a SM or RM
-    	String[] outputBits = this.UMFiles.get(0).split("/");
+    	String[] outputBits = this.filesList.get(1).split("/");
     	String fileType = outputBits[outputBits.length-1].substring(0, 2);
         // Get the file to write ready
         PrintWriter out;
@@ -127,9 +127,10 @@ public class Slave {
     	
     	if (fileType.equals("UM")) {
     		// Reduce step 1
-    		out = new PrintWriter(new BufferedWriter(new FileWriter(this.outputFile)));
+    		out = new PrintWriter(new BufferedWriter(new FileWriter(this.filesList.get(0))));
             // For every file in UMFiles
-            for (String UM : this.UMFiles){
+            for (String UM : this.filesList){
+            	if (this.filesList.indexOf(UM) == 0) continue;
                 fr = new FileReader(UM);
                 br = new BufferedReader(fr);
                 sc = new Scanner(br);
@@ -147,8 +148,8 @@ public class Slave {
             }
     	} else {
     		// Reduce Step 2
-    		out = new PrintWriter(new BufferedWriter(new FileWriter(this.UMFiles.get(0))));
-            fr = new FileReader(this.outputFile);
+    		out = new PrintWriter(new BufferedWriter(new FileWriter(this.filesList.get(0))));
+            fr = new FileReader(this.filesList.get(0));
             br = new BufferedReader(fr);
             sc = new Scanner(br);
             // Read and reduce in hashmap
