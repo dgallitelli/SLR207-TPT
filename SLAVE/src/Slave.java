@@ -24,7 +24,11 @@ public class Slave {
         }
     }
 
-    public static void main(String[] args) {
+    public int getOpCode() {
+		return opCode;
+	}
+
+	public static void main(String[] args) {
 
         if (args.length < 2){
             System.out.println("Not enough args.");
@@ -33,9 +37,12 @@ public class Slave {
 
         Slave sl = new Slave(args);
         try {
-            //sl.map();
-            //sl.map2();
-            sl.reduce();
+            if (sl.getOpCode() == 0)
+            	sl.map2();
+            else if (sl.getOpCode() == 1)
+            	sl.reduce();
+            else
+            	return;
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -74,14 +74,14 @@ public class Master {
             System.out.println("[OK] Copied slaveFile on machine " + m);
 
             // ProcessBuilder for copying splitfile to remote
-            pb = new ProcessBuilder("scp", targetPath+"S0"+i+".txt",
+            pb = new ProcessBuilder("scp", targetPath+"S"+i+".txt",
                     m + ":" + targetPath);
             pb.redirectErrorStream(true);
             pb.start();
             System.out.println("[OK] Copied targetFiles on machine " + m);
 
-            // ProcessBuilder to run slave program from /tmp/dgallitelli/
-            pb = new ProcessBuilder("java", "-jar", slavePath);
+            // ProcessBuilder to run slave program in MAP MODE from /tmp/dgallitelli/
+            pb = new ProcessBuilder("ssh", m, "java -jar "+slavePath+" 0 "+targetPath+"S"+i+".txt");
             p = pb.start();
             System.out.println("[OK] Launched slave.jar on machine " + m);
             // Receive the output from the Slave currently running, update the map
@@ -95,6 +95,9 @@ public class Master {
                     results.put(l, newList);
                 }
             }
+            
+            // Use the targetMachine dictionary to copy UMx files
+            
         }
 
         // Print the mapping of files and machines
