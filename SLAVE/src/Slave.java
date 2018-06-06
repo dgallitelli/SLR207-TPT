@@ -41,7 +41,8 @@ public class Slave {
         }
     }
 
-    private void map() {
+    @SuppressWarnings("unused")
+	private void map() {
         // Get the file number
         String[] items = fileToMap.split("/");
         String numberOfFile = items[items.length-1].split("")[1];
@@ -75,7 +76,8 @@ public class Slave {
         }
     }
 
-    private void map2(){
+    @SuppressWarnings("unused")
+	private void map2(){
         // Get the file number
         String[] items = fileToMap.split("/");
         String numberOfFile = items[items.length-1].split("")[1];
