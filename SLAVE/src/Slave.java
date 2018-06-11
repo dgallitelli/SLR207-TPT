@@ -15,10 +15,18 @@ public class Slave {
             // Mode mapping
             this.fileToMap = args[1];
         } else if (this.opCode == 1){
-            this.reduceKey = args[1];
-            this.filesList = new ArrayList<>();
-            for (int i = 2; i<args.length; i++)
-                this.filesList.add(args[i]);
+        	if (extractFileType(args[2]).compareTo("UM")==0) {
+        		// Reduce 
+                this.reduceKey = args[1];
+                this.filesList = new ArrayList<>();
+                for (int i = 2; i<args.length; i++)
+                    this.filesList.add(args[i]);
+        	} else {
+        		// Reduce 2
+                this.filesList = new ArrayList<>();
+                for (int i = 1; i<args.length; i++)
+                    this.filesList.add(args[i]);        		
+        	}
         } else {
         	System.out.println("Error: opCode must be 0/1");
         }
@@ -119,10 +127,8 @@ public class Slave {
     }
 
     private void reduce() throws IOException {
-    	
     	// Is it step 1 or 2 ? Check if this.outputFile is a SM or RM
-    	String[] outputBits = this.filesList.get(1).split("/");
-    	String fileType = outputBits[outputBits.length-1].substring(0, 2);
+    	String fileType = extractFileType(this.filesList.get(1));
         // Get the file to write ready
         PrintWriter out;
         // Variables for file read
@@ -130,9 +136,6 @@ public class Slave {
         BufferedReader br;
         Scanner sc;
         String line;
-        
-        System.out.println(fileType);            
-        System.out.println(this.filesList.toString());
     	
     	if (fileType.equals("UM")) {
     		// Reduce step 1 - From multiple UMx to one SMx
@@ -159,7 +162,7 @@ public class Slave {
             out.close();
     	} else {
     		// Reduce Step 2 - from SMx to RMx
-    		out = new PrintWriter(new BufferedWriter(new FileWriter(this.filesList.get(0))));
+    		out = new PrintWriter(new BufferedWriter(new FileWriter(this.filesList.get(1))));
             fr = new FileReader(this.filesList.get(0));
             br = new BufferedReader(fr);
             sc = new Scanner(br);
@@ -167,6 +170,7 @@ public class Slave {
             Map<String,Integer> myMap = new HashMap<>();
             while (sc.hasNextLine()){
                 line = sc.nextLine();
+                System.out.println(line);
                 String[] splits = line.split(" ");
                 myMap.merge(splits[0], Integer.parseInt(splits[1]), Integer::sum);
             }
@@ -192,5 +196,11 @@ public class Slave {
         while (sc.hasNextLine()) System.out.println(sc.nextLine());
         
         sc.close();
+    }
+    
+    private String extractFileType(String path) {
+    	String[] outputBits = path.split("/");
+    	String fileType = outputBits[outputBits.length-1].substring(0, 2);
+    	return fileType;
     }
 }
