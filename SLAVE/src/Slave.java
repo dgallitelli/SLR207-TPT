@@ -9,24 +9,24 @@ public class Slave {
     private String reduceKey;
     private static String rootFolder = "/tmp/dgallitelli/";
 
-    public Slave(String[] args) {
+    public Slave(String[] args) throws IOException {
         this.opCode = Integer.parseInt(args[0]);
         if (this.opCode == 0){
             // Mode mapping
             this.fileToMap = args[1];
+            this.map2();
         } else if (this.opCode == 1){
-        	if (extractFileType(args[2]).compareTo("UM")==0) {
+        	if (extractFileType(args[2]).compareTo("SM")==0) {
         		// Reduce 
                 this.reduceKey = args[1];
                 this.filesList = new ArrayList<>();
-                for (int i = 2; i<args.length; i++)
-                    this.filesList.add(args[i]);
+                this.filesList.addAll(Arrays.asList(args).subList(2, args.length));
         	} else {
         		// Reduce 2
                 this.filesList = new ArrayList<>();
-                for (int i = 1; i<args.length; i++)
-                    this.filesList.add(args[i]);        		
+                this.filesList.addAll(Arrays.asList(args).subList(1, args.length));
         	}
+            this.reduce();
         } else {
         	System.out.println("Error: opCode must be 0/1");
         }
@@ -36,24 +36,28 @@ public class Slave {
 		return opCode;
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 
         if (args.length < 2){
             System.out.println("Not enough args.");
             return;
         }
 
-        Slave sl = new Slave(args);
-        try {
-            if (sl.getOpCode() == 0)
-            	sl.map2();
-            else if (sl.getOpCode() == 1)
-            	sl.reduce();
-            else
-            	return;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        new Slave(args);
+
+        // [FOR DEBUG ONLY - COMMENT ABOVE AND UNCOMMENT BELOW]
+
+        /*
+        // Phase 1 - Slave opCode 0 [S --> UM]
+        String cmd = "0 /tmp/dgallitelli/splits/S1.txt";
+        new Slave(cmd.split(" "));
+        // Phase 2 - Slave opCode 1 - Reduce phase 1 [UM --> SM]
+        cmd = "1 Car /tmp/dgallitelli/maps/SM1.txt /tmp/dgallitelli/splits/UM1.txt";
+        new Slave(cmd.split(" "));
+        // Phase 2 - Slave opCode 1 - Reduce phase 2 [SM --> RM]
+        cmd = "1 /tmp/dgallitelli/maps/SM1.txt /tmp/dgallitelli/reduces/RM1.txt";
+        new Slave(cmd.split(" "));
+        */
     }
 
     @SuppressWarnings("unused")
@@ -84,10 +88,11 @@ public class Slave {
 	    br.close();
 	    fr.close();
 	    // Print the results
-	    checkResults(fileOutput);
+	    // checkResults(fileOutput);
     }
 
    	private void map2(){
+        System.out.println("[MAP]");
         // Get the file number
         String[] items = fileToMap.split("/");
         String numberOfFile = items[items.length-1].split("")[1];
@@ -114,12 +119,12 @@ public class Slave {
             for (String key : result.keySet()) out.println(key);
 
             // Close the handlers
-            out.close();
             sc.close();
             br.close();
             fr.close();
+            out.close();
             // Print the results
-            checkResults(fileOutput);
+            // checkResults(fileOutput);
             
         } catch (IOException e) {
             e.printStackTrace();
@@ -129,6 +134,7 @@ public class Slave {
     private void reduce() throws IOException {
     	// Is it step 1 or 2 ? Check if this.outputFile is a SM or RM
     	String fileType = extractFileType(this.filesList.get(1));
+    	String fileSM = this.filesList.get(0);
         // Get the file to write ready
         PrintWriter out;
         // Variables for file read
@@ -138,21 +144,22 @@ public class Slave {
         String line;
     	
     	if (fileType.equals("UM")) {
+    	    System.out.println("[REDUCE PHASE 1]");
     		// Reduce step 1 - From multiple UMx to one SMx
-    		out = new PrintWriter(new BufferedWriter(new FileWriter(this.filesList.get(0))));
+    		out = new PrintWriter(new BufferedWriter(new FileWriter(fileSM)));
             // For every file in UMFiles
             for (String UM : this.filesList){
-            	if (this.filesList.indexOf(UM) == 0) continue;
+                // If on the first element (SM file), skip
+            	if (UM.compareTo(fileSM) == 0) continue;
+            	// Set up read handlers
                 fr = new FileReader(UM);
                 br = new BufferedReader(fr);
                 sc = new Scanner(br);
                 // Read a line and update the SM file
                 while (sc.hasNextLine()){
                     line = sc.nextLine();
-                    System.out.println(line);
                     if (this.reduceKey.equals(line.split(" ")[0])){
-                        // Write on output file a new line
-                        out.write(line+"\n");
+                        out.write(line+" 1\n");
                     }
                 }
                 sc.close();
@@ -160,7 +167,9 @@ public class Slave {
                 fr.close();
             }
             out.close();
+            checkResults(fileSM);
     	} else {
+            System.out.println("[REDUCE PHASE 2]");
     		// Reduce Step 2 - from SMx to RMx
     		out = new PrintWriter(new BufferedWriter(new FileWriter(this.filesList.get(1))));
             fr = new FileReader(this.filesList.get(0));
@@ -170,12 +179,11 @@ public class Slave {
             Map<String,Integer> myMap = new HashMap<>();
             while (sc.hasNextLine()){
                 line = sc.nextLine();
-                System.out.println(line);
                 String[] splits = line.split(" ");
                 myMap.merge(splits[0], Integer.parseInt(splits[1]), Integer::sum);
             }
             for (String key : myMap.keySet())
-            	out.write(key+" "+myMap.get(key).toString()+"\n");
+            	out.write(key+" "+myMap.get(key)+"\n");
             sc.close();
             br.close();
             fr.close();            
