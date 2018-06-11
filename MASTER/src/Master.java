@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -9,6 +10,8 @@ import java.util.Map;
 
 public class Master {
 
+	private static String classroom = "c126";
+	private static int firstPC = 15;
     private static String userPrefix = "dgallitelli@";
     private static String domain = ".enst.fr";
     private static String splitsPath = "/tmp/dgallitelli/splits/";
@@ -19,12 +22,19 @@ public class Master {
     private Master(){}
 
     public static void main(String[] args) throws IOException {
-        Master ms = new Master();
-        // ms.oldFoo();
-        ms.newFoo();
+    	try {
+			InitFiles ifs = new InitFiles();
+	        Master ms = new Master();
+	        ms.newFoo(ifs.getFiles().keySet().size());
+	        return;
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
     }
 
-    private void newFoo() throws IOException {
+    private void newFoo(int nMachines) throws IOException {
 
         // Goal : Make Master copy three files from /tmp/dgallitelli/splits/ to 3 machines
         ProcessBuilder pb;
@@ -35,9 +45,8 @@ public class Master {
 
         // Define the target machines
         Map<String, Integer> targetMachines = new HashMap<>();
-        targetMachines.put("c128-24", 0);
-        targetMachines.put("c128-22", 1);
-        targetMachines.put("c128-23", 2);
+        for (int j = 0; j < nMachines; j++)
+        	targetMachines.put(classroom+"-"+(firstPC+j), j);
 
         // Define the MR map
         Map<String, List<String>> mapResults = new HashMap<>();
@@ -100,17 +109,16 @@ public class Master {
         }
 
         // Print the results
-        for (String r : mapResults.keySet())
-            System.out.println(r + " - <" + mapResults.get(r).toString() + ">");
+        // for (String r : mapResults.keySet())
+           // System.out.println(r + " - <" + mapResults.get(r).toString() + ">");
         
-        // String machine = (String) targetMachines.keySet().toArray()[0];
-        String machine = "c128-23";
+        String machine = (String) targetMachines.keySet().toArray()[0];
+        // String machine = classroom+"-"+firstPC;
         m = String.format("%s%s%s", userPrefix, machine, domain);
         
         // [SHUFFLE PHASE]
         // Look for UMx files to send to the appropriate machine
         // targetMachine contains as value the x in UMx - mapResults contains the keys-UMx map
-        // TODO : can be optimized!
         for (String machine2 : targetMachines.keySet()) {
             String m2 = String.format("%s%s%s", userPrefix, machine2, domain);
             i = targetMachines.get(machine2);
@@ -126,20 +134,39 @@ public class Master {
         // [REDUCE PHASE]
         // New process on target machine to run Slave in REDUCE MODE
         StringBuilder UMPath = new StringBuilder();
-        UMPath.append(slavePath).append(" 1 ").append("Car").append(mapsPath).append("SM").append(i).append(".txt ");
+        UMPath.append(slavePath).append(" 1 ").append("Car ").append(mapsPath).append("SM").append(i).append(".txt ");
         for (String machine2 : targetMachines.keySet())
         	UMPath.append(mapsPath).append("UM").append(targetMachines.get(machine2)).append(".txt ");
-        System.out.println(UMPath.toString());
         pb = new ProcessBuilder("ssh", m, "java -jar "+UMPath.toString());
         p = pb.start();
         System.out.println("[OK] Launched Slave.jar REDUCE MODE on machine " + m);
         
         // [REDUCE PHASE 2]
         // New process on target machine to run Slave in REDUCE MODE 2
-        pb = new ProcessBuilder("ssh", m, 
-        		"java -jar "+slavePath+" 1 "+mapsPath+"SM"+i+".txt "+reducesPath+"RM"+i+".txt ");
+        StringBuilder rmFilePath = new StringBuilder();
+        StringBuilder reduce2 = new StringBuilder();
+        rmFilePath.append(reducesPath).append("RM").append(i).append(".txt");
+        reduce2.append(slavePath).append(" 1 ").append(mapsPath).append("SM").append(i).append(".txt ").append(rmFilePath.toString());
+        pb = new ProcessBuilder("ssh", m, "java -jar "+reduce2.toString());
         p = pb.start();
         System.out.println("[OK] Launched Slave.jar REDUCE MODE 2 on machine " + m);
+        input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        while ((l = input.readLine()) != null) {
+        	System.out.println(l);
+        }
+        
+        // [EXTRACT RESULT FROM REDUCE MACHINE]
+        pb = new ProcessBuilder("scp", m+":"+rmFilePath.toString(), reducesPath);
+        p = pb.start();
+        System.out.println("[OK] Obtained "+rmFilePath.toString()+" from machine "+m);
+        
+        // [OPEN FOR RESULTS]
+        BufferedReader reader = new BufferedReader(new FileReader(rmFilePath.toString()));
+        while ((l = reader.readLine()) != null)
+        {
+            System.out.println(l);
+        }
+        reader.close();
         
     }
 }
