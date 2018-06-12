@@ -2,6 +2,5 @@
 <classpath>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="/cal/homes/dgallitelli/SLR207-TPT/SLAVE/out/artifacts/Slave/SLAVE.jar"/>
 	<classpathentry kind="output" path="out/production/SLAVE"/>
 </classpath>
