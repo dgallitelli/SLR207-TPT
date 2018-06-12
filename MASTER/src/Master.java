@@ -11,8 +11,8 @@ import java.util.Map;
 
 public class Master {
 
-	private static String classroom = "c128";
-	private static int firstPC = 28;
+	private static String classroom = "c125";
+	private static int firstPC = 19;
     private static String userPrefix = "dgallitelli@";
     private static String domain = ".enst.fr";
     private static String splitsPath = "/tmp/dgallitelli/splits/";

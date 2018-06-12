@@ -16,16 +16,22 @@ public class InitFiles {
 		files.put(0, "Deer Beer River");
 		files.put(1, "Car Car River");
 		files.put(2, "Deer Car Beer");
+		files.put(3, "Beer Car River");
 		
-		// Create splits dir if not existing
-		File rootFolder = new File(rootPath+"splits"); 
+		// Create root dir if not existing
+		File rootFolder = new File(rootPath); 
 		if (!rootFolder.exists())
 			rootFolder.mkdir();
+		
+		// Create splits dir if not existing
+		File splitsFolder = new File(rootPath+"splits"); 
+		if (!splitsFolder.exists())
+			splitsFolder.mkdir();
 		
 		// Create the splits files
 		for (int i : files.keySet()) {
 			writer = new PrintWriter(rootPath+"splits/S"+i+".txt", "UTF-8");
-			writer.write(files.get(i));
+			writer.write(files.get(i)+"\n");
 			writer.close();
 		}
 		

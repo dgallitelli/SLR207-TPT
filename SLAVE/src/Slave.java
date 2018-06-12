@@ -14,18 +14,11 @@ public class Slave {
         if (this.opCode == 0){
             // Mode mapping
             this.fileToMap = args[1];
-            this.map2();
+            this.map();
         } else if (this.opCode == 1){
-        	if (extractFileType(args[2]).compareTo("SM")==0) {
-        		// Reduce 
-                this.reduceKey = args[1];
-                this.filesList = new ArrayList<>();
-                this.filesList.addAll(Arrays.asList(args).subList(2, args.length));
-        	} else {
-        		// Reduce 2
-                this.filesList = new ArrayList<>();
-                this.filesList.addAll(Arrays.asList(args).subList(1, args.length));
-        	}
+            this.reduceKey = args[1];
+            this.filesList = new ArrayList<>();
+            this.filesList.addAll(Arrays.asList(args).subList(2, args.length));
             this.reduce();
         } else {
         	System.out.println("Error: opCode must be 0/1");
@@ -38,67 +31,34 @@ public class Slave {
 
 	public static void main(String[] args) throws IOException {
 
-        if (args.length < 2){
+        
+        if (args.length == 0) {
+        	// [NO ARGS - FOR DEBUG ONLY - COMMENT ABOVE AND UNCOMMENT BELOW]
+        	String cmd = "0 /tmp/dgallitelli/splits/S1.txt";
+            new Slave(cmd.split(" "));
+            // Phase 2 - Slave opCode 1 - Reduce phase 1 [UM --> SM]
+            cmd = "1 Car /tmp/dgallitelli/maps/SM1.txt /tmp/dgallitelli/splits/UM1.txt";
+            new Slave(cmd.split(" "));
+            // Phase 2 - Slave opCode 1 - Reduce phase 2 [SM --> RM]
+            cmd = "1 Car /tmp/dgallitelli/maps/SM1.txt /tmp/dgallitelli/reduces/RM1.txt";
+            new Slave(cmd.split(" "));
+        } else if (args.length < 2){
+        	// Wrong number of args - exit
             System.out.println("Not enough args.");
             return;
-        }
+        } else 
+        	new Slave(args);
 
-        new Slave(args);
-
-        // [FOR DEBUG ONLY - COMMENT ABOVE AND UNCOMMENT BELOW]
-
-        /*
-        // Phase 1 - Slave opCode 0 [S --> UM]
-        String cmd = "0 /tmp/dgallitelli/splits/S1.txt";
-        new Slave(cmd.split(" "));
-        // Phase 2 - Slave opCode 1 - Reduce phase 1 [UM --> SM]
-        cmd = "1 Car /tmp/dgallitelli/maps/SM1.txt /tmp/dgallitelli/splits/UM1.txt";
-        new Slave(cmd.split(" "));
-        // Phase 2 - Slave opCode 1 - Reduce phase 2 [SM --> RM]
-        cmd = "1 /tmp/dgallitelli/maps/SM1.txt /tmp/dgallitelli/reduces/RM1.txt";
-        new Slave(cmd.split(" "));
-        */
     }
 
-    @SuppressWarnings("unused")
-	private void map() throws IOException{
-        // Get the file number
-        String[] items = fileToMap.split("/");
-        String numberOfFile = items[items.length-1].split("")[1];
-        String fileOutput = rootFolder+"splits/UM"+numberOfFile+".txt";
-        String line;
-
-        // Read the file specified by the parameter
-	    FileReader fr = new FileReader(fileToMap);
-	    BufferedReader br = new BufferedReader(fr);
-	    Scanner sc = new Scanner(br);
-	    // Get the file to write ready
-	    PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileOutput)));
-	
-	    // Read a line and update the map
-	    while (sc.hasNextLine()){
-	        line = sc.nextLine();
-	        items = line.split(" ");
-	        for (String item : items) out.println(item + " " + "1");
-	    }
-	
-	    // Close the handlers
-	    out.close();
-	    sc.close();
-	    br.close();
-	    fr.close();
-	    // Print the results
-	    // checkResults(fileOutput);
-    }
-
-   	private void map2(){
+   	private void map(){
+   		// Phase 1 - Slave opCode 0 [S --> UM]
         System.out.println("[MAP]");
         // Get the file number
         String[] items = fileToMap.split("/");
         String numberOfFile = items[items.length-1].split("")[1];
         String fileOutput = rootFolder+"splits/UM"+numberOfFile+".txt";
         String line;
-        Map<String, Integer> result = new HashMap<>();
 
         // Read the file specified by the parameter
         try {
@@ -112,11 +72,8 @@ public class Slave {
             while (sc.hasNextLine()){
                 line = sc.nextLine();
                 items = line.split(" ");
-                for (String item : items) result.merge(item, 1, Integer::sum);
+                for (String item : items) out.println(item+" "+1);
             }
-
-            // Print the keys to the output file
-            for (String key : result.keySet()) out.println(key);
 
             // Close the handlers
             sc.close();
@@ -159,7 +116,7 @@ public class Slave {
                 while (sc.hasNextLine()){
                     line = sc.nextLine();
                     if (this.reduceKey.equals(line.split(" ")[0])){
-                        out.write(line+" 1\n");
+                        out.println(line);
                     }
                 }
                 sc.close();
@@ -171,8 +128,9 @@ public class Slave {
     	} else {
             System.out.println("[REDUCE PHASE 2]");
     		// Reduce Step 2 - from SMx to RMx
-    		out = new PrintWriter(new BufferedWriter(new FileWriter(this.filesList.get(1))));
-            fr = new FileReader(this.filesList.get(0));
+            String fileRM = this.filesList.get(1);
+    		out = new PrintWriter(new BufferedWriter(new FileWriter(fileRM)));
+            fr = new FileReader(fileSM);
             br = new BufferedReader(fr);
             sc = new Scanner(br);
             // Read and reduce in hashmap
@@ -188,6 +146,7 @@ public class Slave {
             br.close();
             fr.close();            
             out.close();
+            checkResults(fileRM);
         }
     }
 
