@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -156,9 +157,14 @@ public class Master {
         }
         
         // [EXTRACT RESULT FROM REDUCE MACHINE]
-        pb = new ProcessBuilder("scp", m+":"+rmFilePath.toString(), reducesPath);
-        p = pb.start();
-        System.out.println("[OK] Obtained "+rmFilePath.toString()+" from machine "+m);
+        pb = new ProcessBuilder("scp", m+":"+rmFilePath.toString(), reducesPath.substring(0, reducesPath.length()-2));
+        pb.start();
+        if (!new File(rmFilePath.toString()).isFile()) {
+        	System.out.println("There was an error in copying file "+rmFilePath.toString()+" from machine "+m);
+        	return;
+        }
+    	System.out.println("[OK] Obtained "+rmFilePath.toString()+" from machine "+m);
+       
         
         // [OPEN FOR RESULTS]
         BufferedReader reader = new BufferedReader(new FileReader(rmFilePath.toString()));
