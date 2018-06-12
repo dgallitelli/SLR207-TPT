@@ -37,7 +37,7 @@ public class InitFiles {
 		
 		// Copy SLAVE/out/artifacts/Slave.jar into /tmp/dgallitelli
 		File slavejar = new File(slavePath);
-		Files.copy(slavejar.toPath(), new File(slavePath+"Slave.jar").toPath(), StandardCopyOption.REPLACE_EXISTING);
+		Files.copy(slavejar.toPath(), new File(rootPath+"Slave.jar").toPath(), StandardCopyOption.REPLACE_EXISTING);
 	}
 
 	public Map<Integer, String> getFiles() {

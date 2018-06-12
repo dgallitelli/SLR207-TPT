@@ -53,12 +53,13 @@ public class Slave {
 
    	private void map(){
    		// Phase 1 - Slave opCode 0 [S --> UM]
-        System.out.println("[MAP]");
+        // System.out.println("[MAP]");
         // Get the file number
         String[] items = fileToMap.split("/");
         String numberOfFile = items[items.length-1].split("")[1];
         String fileOutput = rootFolder+"splits/UM"+numberOfFile+".txt";
         String line;
+        Set<String> keys = new HashSet<>();
 
         // Read the file specified by the parameter
         try {
@@ -72,7 +73,10 @@ public class Slave {
             while (sc.hasNextLine()){
                 line = sc.nextLine();
                 items = line.split(" ");
-                for (String item : items) out.println(item+" "+1);
+                for (String item : items) {
+                	out.println(item+" "+1);
+                	keys.add(item);
+                }
             }
 
             // Close the handlers
@@ -80,8 +84,8 @@ public class Slave {
             br.close();
             fr.close();
             out.close();
-            // Print the results
-            // checkResults(fileOutput);
+            // Print the keys - they will be read by Master to generate the UMx - keys
+            for (String key : keys) System.out.println(key);
             
         } catch (IOException e) {
             e.printStackTrace();
