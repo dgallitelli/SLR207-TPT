@@ -18,7 +18,7 @@ public class InitFiles {
 		files.put(2, "Deer Car Beer");
 		
 		// Create splits dir if not existing
-		File rootFolder = new File(rootPath); 
+		File rootFolder = new File(rootPath+"splits"); 
 		if (!rootFolder.exists())
 			rootFolder.mkdir();
 		
