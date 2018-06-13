@@ -1,7 +1,6 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,9 +23,9 @@ public class Master {
 			setupFirstPC();
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args){
     	try {
-			InitFiles ifs = new InitFiles();
+			InitFiles ifs = new InitFiles("/cal/homes/dgallitelli/Downloads/shakespeare/");
 	        Master ms = new Master();
 	        ms.newFoo(ifs.getFiles().keySet().size());
 	        return;

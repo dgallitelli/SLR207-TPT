@@ -18,6 +18,35 @@ public class InitFiles {
 		files.put(2, "Deer Car Beer");
 		files.put(3, "Beer Car River");
 		
+		createFolders();
+		
+		// Create the splits files
+		for (int i : files.keySet()) {
+			writer = new PrintWriter(rootPath+"splits/S"+i+".txt", "UTF-8");
+			writer.write(files.get(i)+"\n");
+			writer.close();
+		}
+	}
+	
+	public InitFiles(String _folder) throws Exception {
+		
+		createFolders();
+		
+		File folder = new File(_folder);
+		// In case folder is provided, copy files and rename them
+	    File[] _files = folder.listFiles();
+	    if(_files!=null) {
+	    	int i = 0;
+	        for(File f: _files) {
+	        	Files.copy(f.toPath(), new File(rootPath+"splits/S"+i+".txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+	        	files.put(i, "");
+	        	i++;
+	        }
+	    }
+	}
+	
+	private void createFolders() throws Exception {
+		
 		// Create root dir if not existing
 		File rootFolder = new File(rootPath); 
 		if (!rootFolder.exists())
@@ -27,13 +56,7 @@ public class InitFiles {
 		File splitsFolder = new File(rootPath+"splits"); 
 		if (!splitsFolder.exists())
 			splitsFolder.mkdir();
-		
-		// Create the splits files
-		for (int i : files.keySet()) {
-			writer = new PrintWriter(rootPath+"splits/S"+i+".txt", "UTF-8");
-			writer.write(files.get(i)+"\n");
-			writer.close();
-		}
+
 		
 		// Create splits dir if not existing
 		File mapsFolder = new File(rootPath+"maps"); 
