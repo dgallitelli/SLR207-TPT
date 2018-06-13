@@ -50,8 +50,6 @@ public class Master {
 
     private void newFoo(int nMachines) throws Exception {
 
-        ProcessBuilder pb;
-        Process p;
         BufferedReader input;
         String l;
         
@@ -76,8 +74,11 @@ public class Master {
         
         // Get machines
     	String[] machines = mapMachinesID.keySet().toArray(new String[mapMachinesID.keySet().size()]);
-
-        // [RUBN MULTIPLE SLAVES IN PARALLEL, MAP MODE]
+    	
+    	// ###########################################
+        // [RUN MULTIPLE SLAVES IN PARALLEL, MAP MODE]
+    	// ###########################################
+    	
         ProcessBuilder[] mappersProcessBuilder = new ProcessBuilder[machines.length];
         Process[] mappersProcess = new Process[machines.length];
         for (int j = 0; j < machines.length; j++) {
@@ -100,80 +101,127 @@ public class Master {
                 }
             }
         }
+        
+        // ###########################################
 
         // Print the results
         for (String r : mapKeysUMx.keySet())
         	System.out.println(r + " - <" + mapKeysUMx.get(r).toString() + ">");
+
         
-        // Setup the reducer Machine
-        String reducer = (String) mapMachinesID.keySet().toArray()[0];
-        String reducerFull = String.format("%s%s%s", userPrefix, reducer, domain);
+    	String[] keys = mapKeysUMx.keySet().toArray(new String[mapKeysUMx.keySet().size()]);
+    	int nReducers = nMachines < keys.length ? nMachines : keys.length;
+
+        
+        // ###########################################
+        // [SHUFFLE PHASE]
+        // For every key, find an available machine
+        // To be used as a reducer
+        // ###########################################
         
         // FinalMap for results
-        Map<String, Integer> finalMap = new HashMap<>();
-        
-        // Choose the key for reduce
-        for (String reducekey : mapKeysUMx.keySet()) {
-        	
-        	System.out.println("[KEY] Working with key: "+reducekey);
+        Map<String, String> keysMachinesMap = new HashMap<>();
+    	
+        for (int i = 0; i < keys.length; i++) {
+        	String reducekey = keys[i];
+        	String reducerID = machines[i%nReducers];
+            String reducerFull = String.format("%s%s%s", userPrefix, reducerID, domain);
+            keysMachinesMap.put(reducekey, reducerID);
+        	System.out.println("[KEY-PC] Key-PC pair: "+keysMachinesMap.get(reducekey));        	
         
 	        // [SHUFFLE PHASE]
-	        // Look for UMx files to send to the appropriate machine
-	        // targetMachine contains as value the x in UMx - mapResults contains the keys-UMx map
 	        List<String> mappers = mapKeysUMx.get(reducekey);
-	        for (String mapperFile : mappers) {
+            ProcessBuilder[] shuffleProcessBuilder = new ProcessBuilder[mappers.size()];
+            Process[] shuffleProcess = new Process[mappers.size()];
+            
+	        for (int j = 0; j < mappers.size(); j++) {
+	        	String mapperFile = mappers.get(j);
 	        	String mapper = mapUMxMachines.get(mapperFile);
 	            int mapperID = Integer.parseInt(mapperFile.split("M")[1]);
 	            String mapperFull = String.format("%s%s%s", userPrefix, mapper, domain);
-	        	// Every machine has to send their file UMx.txt, if any to the current machine
-	            pb = new ProcessBuilder("scp", mapperFull+":"+splitsPath+"UM"+mapperID+".txt", reducerFull + ":" + mapsPath);
-	            p = pb.start();
-	            p.waitFor();
+	            
+	            shuffleProcessBuilder[j] = new ProcessBuilder("scp", mapperFull+":"+splitsPath+"UM"+mapperID+".txt", reducerFull + ":" + mapsPath);
+	            shuffleProcess[j] = shuffleProcessBuilder[j].start();
 	        }
-	        // System.out.println("[OK] SHUFFLE PHASE IS DONE - everything has been sent to machine "+reducerFull);
-	        
-	        int reducerID = mapMachinesID.get(reducer);
-	        
-	        // [REDUCE PHASE]
-	        // New process on target machine to run Slave in REDUCE MODE
-	        
+	        for (int j = 0; j < mappers.size(); j++) shuffleProcess[j].waitFor();
+	        System.out.println("[OK] SHUFFLE PHASE IS DONE - everything has been sent to machine "+reducerFull);
+        }
+        // ###########################################
+        
+        // ###########################################
+        // [REDUCE PHASE]
+        // On every reducer machine
+        // run Slave in REDUCE mode
+        // ###########################################
+        
+        // FinalMap for results
+        Map<String, Integer> finalMap = new HashMap<>();
+        // Process Handlers for reducers
+        ProcessBuilder[] reducersProcessBuilder = new ProcessBuilder[nReducers];
+        Process[] reducersProcess = new Process[nReducers];
+        
+        for (int i = 0; i < nReducers; i++) {
+        	// Get key & reducer info
+        	String reducekey = keys[i];
+        	int reducerID = i%nReducers;
+        	String reducerName = machines[i%nReducers];
+            String reducerFull = String.format("%s%s%s", userPrefix, reducerName, domain);
 	        // Create string for the command
 	        StringBuilder UMPath = new StringBuilder();
 	        UMPath.append(slavePath).append(" 1 ").append(reducekey).append(" ").append(mapsPath).append("SM").append(reducerID).append(".txt ");
-	        // Get the code of every mapper and build the argument
-	        for (String mapper : mappers)
-	        	UMPath.append(mapsPath).append(mapper).append(".txt ");
-	        //System.out.println(UMPath.toString());
-	        // Build the process and run it
-	        pb = new ProcessBuilder("ssh", reducerFull, "java -jar "+UMPath.toString());
-            p = pb.start();
-            p.waitFor();
-	        // System.out.println("[OK] Launched Slave.jar REDUCE MODE on machine " + reducerFull);
+	        for (String mapper : mapKeysUMx.get(reducekey)) UMPath.append(mapsPath).append(mapper).append(".txt ");
+	        System.out.println("UMPATH = "+UMPath.toString());
+	        // [LAUNCH REDUCE PHASE 1]
+	        reducersProcessBuilder[i] = new ProcessBuilder("ssh", reducerFull, "java -jar "+UMPath.toString());
+	        reducersProcess[i] = reducersProcessBuilder[i].start();
+        }
+        for (int i = 0; i < nReducers; i++) reducersProcess[i].waitFor();
 	        
-	        // [REDUCE PHASE 2]
-	        // New process on target machine to run Slave in REDUCE MODE 2
-	        
+        for (int i = 0; i < nReducers; i++) {
+        	// Get key & reducer info
+        	String reducekey = keys[i];
+        	int reducerID = i%nReducers;
+        	String reducerName = machines[i%nReducers];
+            String reducerFull = String.format("%s%s%s", userPrefix, reducerName, domain);
 	        // Build the command
 	        StringBuilder rmFilePath = new StringBuilder();
 	        StringBuilder reduce2 = new StringBuilder();
 	        rmFilePath.append(reducesPath).append("RM").append(reducerID).append(".txt");
 	        reduce2.append(slavePath).append(" 1 ").append(reducekey).append(" ").append(mapsPath).append("SM").append(reducerID).append(".txt ").append(rmFilePath.toString());
-	        // Build the process and run it - don't need output here
-	        //System.out.println(reduce2.toString());
-	        pb = new ProcessBuilder("ssh", reducerFull, "java -jar "+reduce2.toString());
-	        p = pb.start();
-            p.waitFor();
-	        // System.out.println("[OK] Launched Slave.jar REDUCE MODE 2 on machine " + reducerFull);
+	        System.out.println("REDUCE2 = "+reduce2.toString());
+	        // [LAUNCH REDUCE PHASE 1]
+	        reducersProcessBuilder[i] = new ProcessBuilder("ssh", reducerFull, "java -jar "+reduce2.toString());
+	        reducersProcess[i] = reducersProcessBuilder[i].start();
+        }
+        for (int i = 0; i < nReducers; i++) reducersProcess[i].waitFor();
 	        
-	        // [EXTRACT RESULT FROM REDUCE MACHINE]
-	        pb = new ProcessBuilder("scp", reducerFull+":"+rmFilePath.toString(), reducesPath.substring(0, reducesPath.length()-1));
-            p = pb.start();
-            p.waitFor();
+        for (int i = 0; i < nReducers; i++) {
+        	// Get key & reducer info
+        	int reducerID = i%nReducers;
+        	String reducerName = machines[i%nReducers];
+            String reducerFull = String.format("%s%s%s", userPrefix, reducerName, domain);
+	        StringBuilder rmFilePath = new StringBuilder();
+	        rmFilePath.append(reducesPath).append("RM").append(reducerID).append(".txt");
+            
+	        // [EXTRACT RESULT FROM REDUCERS]
+	        reducersProcessBuilder[i] = new ProcessBuilder("scp", reducerFull+":"+rmFilePath.toString(), reducesPath.substring(0, reducesPath.length()-1));
+	        reducersProcess[i] = reducersProcessBuilder[i].start();
+        }
+        for (int i = 0; i < nReducers; i++) reducersProcess[i].waitFor();
+        
+        for (int i = 0; i < nReducers; i++) {
+        	// Get key & reducer info
+        	int reducerID = i%nReducers;
+        	String reducerName = machines[i%nReducers];
+            String reducerFull = String.format("%s%s%s", userPrefix, reducerName, domain);
+	        StringBuilder rmFilePath = new StringBuilder();
+	        rmFilePath.append(reducesPath).append("RM").append(reducerID).append(".txt");
+	        
+	        // Check if the file was received
 	        if (!new File(rmFilePath.toString()).isFile()) {
 	        	System.out.println("There was an error in copying file "+rmFilePath.toString()+" from machine "+reducerFull);
 	        	return;
 	        }
-	    	// System.out.println("[OK] Obtained "+rmFilePath.toString()+" from machine "+reducerFull);
 	    	
 	    	// [OPEN FILE, READ RESULTS INTO MAP]
 	        BufferedReader reader = new BufferedReader(new FileReader(rmFilePath.toString()));
@@ -182,12 +230,7 @@ public class Master {
 	        	String[] keyValue = l.split(" ");
 	        	finalMap.put(keyValue[0], Integer.parseInt(keyValue[1]));
 	        }
-	        reader.close();
-	        
-	        // [DELETE FILE, JUST TO AVOID PROBLEMS]
-	        File rm = new File(rmFilePath.toString());
-	        rm.delete();
-	        
+	        reader.close();	        
         }
         
         // [PRINT FINALMAP WITH RESULTS]
