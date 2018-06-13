@@ -127,7 +127,7 @@ public class Master {
         	String reducerID = machines[i%nReducers];
             String reducerFull = String.format("%s%s%s", userPrefix, reducerID, domain);
             keysMachinesMap.put(reducekey, reducerID);
-        	System.out.println("[KEY-PC] Key-PC pair: "+keysMachinesMap.get(reducekey));        	
+        	System.out.println("[KEY-PC] Key-PC pair: "+reducekey+" - "+keysMachinesMap.get(reducekey));        	
         
 	        // [SHUFFLE PHASE]
 	        List<String> mappers = mapKeysUMx.get(reducekey);
@@ -170,7 +170,7 @@ public class Master {
 	        StringBuilder UMPath = new StringBuilder();
 	        UMPath.append(slavePath).append(" 1 ").append(reducekey).append(" ").append(mapsPath).append("SM").append(reducerID).append(".txt ");
 	        for (String mapper : mapKeysUMx.get(reducekey)) UMPath.append(mapsPath).append(mapper).append(".txt ");
-	        System.out.println("UMPATH = "+UMPath.toString());
+	        // System.out.println("UMPATH = "+UMPath.toString());
 	        // [LAUNCH REDUCE PHASE 1]
 	        reducersProcessBuilder[i] = new ProcessBuilder("ssh", reducerFull, "java -jar "+UMPath.toString());
 	        reducersProcess[i] = reducersProcessBuilder[i].start();
@@ -187,8 +187,8 @@ public class Master {
 	        StringBuilder rmFilePath = new StringBuilder();
 	        StringBuilder reduce2 = new StringBuilder();
 	        rmFilePath.append(reducesPath).append("RM").append(reducerID).append(".txt");
-	        reduce2.append(slavePath).append(" 1 ").append(reducekey).append(" ").append(mapsPath).append("SM").append(reducerID).append(".txt ").append(rmFilePath.toString());
-	        System.out.println("REDUCE2 = "+reduce2.toString());
+	        reduce2.append(slavePath).append(" 2 ").append(reducekey).append(" ").append(mapsPath).append("SM").append(reducerID).append(".txt ").append(rmFilePath.toString());
+	        // System.out.println("REDUCE2 = "+reduce2.toString());
 	        // [LAUNCH REDUCE PHASE 1]
 	        reducersProcessBuilder[i] = new ProcessBuilder("ssh", reducerFull, "java -jar "+reduce2.toString());
 	        reducersProcess[i] = reducersProcessBuilder[i].start();
@@ -234,9 +234,9 @@ public class Master {
         }
         
         // [PRINT FINALMAP WITH RESULTS]
-        System.out.println("[#################]");
+        System.out.println("[############################]");
         System.out.println(finalMap.toString());
-        System.out.println("[#################]");
+        System.out.println("[############################]");
         
     }
 }

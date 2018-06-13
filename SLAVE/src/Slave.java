@@ -15,7 +15,7 @@ public class Slave {
             // Mode mapping
             this.fileToMap = args[1];
             this.map();
-        } else if (this.opCode == 1){
+        } else if (this.opCode == 1 || this.opCode == 2){
             this.reduceKey = args[1];
             this.filesList = new ArrayList<>();
             this.filesList.addAll(Arrays.asList(args).subList(2, args.length));
@@ -40,7 +40,7 @@ public class Slave {
             cmd = "1 Car /tmp/dgallitelli/maps/SM1.txt /tmp/dgallitelli/splits/UM1.txt";
             new Slave(cmd.split(" "));
             // Phase 2 - Slave opCode 1 - Reduce phase 2 [SM --> RM]
-            cmd = "1 Car /tmp/dgallitelli/maps/SM1.txt /tmp/dgallitelli/reduces/RM1.txt";
+            cmd = "2 Car /tmp/dgallitelli/maps/SM1.txt /tmp/dgallitelli/reduces/RM1.txt";
             new Slave(cmd.split(" "));
         } else if (args.length < 2){
         	// Wrong number of args - exit
@@ -93,8 +93,6 @@ public class Slave {
     }
 
     private void reduce() throws IOException {
-    	// Is it step 1 or 2 ? Check if this.outputFile is a SM or RM
-    	String fileType = extractFileType(this.filesList.get(1));
     	String fileSM = this.filesList.get(0);
         // Get the file to write ready
         PrintWriter out;
@@ -104,7 +102,7 @@ public class Slave {
         Scanner sc;
         String line;
     	
-    	if (fileType.equals("UM")) {
+    	if (this.opCode == 1) {
     	    System.out.println("[REDUCE PHASE 1]");
     		// Reduce step 1 - From multiple UMx to one SMx
     		out = new PrintWriter(new BufferedWriter(new FileWriter(fileSM)));
@@ -129,7 +127,7 @@ public class Slave {
             }
             out.close();
             checkResults(fileSM);
-    	} else {
+    	} else if (this.opCode == 2) {
             System.out.println("[REDUCE PHASE 2]");
     		// Reduce Step 2 - from SMx to RMx
             String fileRM = this.filesList.get(1);
@@ -171,7 +169,8 @@ public class Slave {
         sc.close();
     }
     
-    private String extractFileType(String path) {
+    @SuppressWarnings("unused")
+	private String extractFileType(String path) {
     	String[] outputBits = path.split("/");
     	String fileType = outputBits[outputBits.length-1].substring(0, 2);
     	return fileType;
