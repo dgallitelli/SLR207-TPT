@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-// import java.util.concurrent.TimeUnit;
 
 public class Master {
 	
@@ -35,6 +34,12 @@ public class Master {
 			e.printStackTrace();
 			return;
 		}
+    }
+    
+    @SuppressWarnings({ "resource" })
+	private void pause() {
+		System.out.println("Press Any Key To Continue...");
+		new java.util.Scanner(System.in).nextLine();
     }
     
     private void setupFirstPC() throws Exception {

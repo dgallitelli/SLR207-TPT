@@ -65,12 +65,14 @@ public class Deploy {
                 // ProcessBuilder for copying slavefile to remote
                 pb = new ProcessBuilder("scp", slavePath, m + ":" + slavePath);
                 p = pb.start();
+                p.waitFor();
                 System.out.println("[OK] Copied slaveFile on machine " + m);
 
                 // ProcessBuilder for copying splitfile to remote
                 pb = new ProcessBuilder("scp", splitsPath+"S"+i+".txt",
                         m + ":" + splitsPath);
                 p = pb.start();
+                p.waitFor();
                 System.out.println("[OK] Copied targetFiles on machine " + m);
             }
 		}

@@ -22,8 +22,6 @@ public class InitFiles {
 		File rootFolder = new File(rootPath); 
 		if (!rootFolder.exists())
 			rootFolder.mkdir();
-		else
-			deleteFolder(rootFolder);
 		
 		// Create splits dir if not existing
 		File splitsFolder = new File(rootPath+"splits"); 
@@ -36,6 +34,16 @@ public class InitFiles {
 			writer.write(files.get(i)+"\n");
 			writer.close();
 		}
+		
+		// Create splits dir if not existing
+		File mapsFolder = new File(rootPath+"maps"); 
+		if (!mapsFolder.exists())
+			mapsFolder.mkdir();
+		
+		// Create splits dir if not existing
+		File reducesFolder = new File(rootPath+"reduces"); 
+		if (!reducesFolder.exists())
+			reducesFolder.mkdir();
 		
 		// Copy SLAVE/out/artifacts/Slave.jar into /tmp/dgallitelli
 		Files.copy(new File(slavePath).toPath(), new File(rootPath+"Slave.jar").toPath(), StandardCopyOption.REPLACE_EXISTING);
