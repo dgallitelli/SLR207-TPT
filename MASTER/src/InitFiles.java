@@ -22,6 +22,8 @@ public class InitFiles {
 		File rootFolder = new File(rootPath); 
 		if (!rootFolder.exists())
 			rootFolder.mkdir();
+		else
+			deleteFolder(rootFolder);
 		
 		// Create splits dir if not existing
 		File splitsFolder = new File(rootPath+"splits"); 
@@ -45,6 +47,19 @@ public class InitFiles {
 
 	public void setFiles(Map<Integer, String> files) {
 		this.files = files;
+	}
+	
+	public void deleteFolder(File folder) {
+	    File[] files = folder.listFiles();
+	    if(files!=null) {
+	        for(File f: files) {
+	            if(f.isDirectory()) {
+	                deleteFolder(f);
+	            } else {
+	                f.delete();
+	            }
+	        }
+	    }
 	}
 
 }

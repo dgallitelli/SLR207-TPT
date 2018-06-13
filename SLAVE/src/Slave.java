@@ -133,23 +133,25 @@ public class Slave {
             System.out.println("[REDUCE PHASE 2]");
     		// Reduce Step 2 - from SMx to RMx
             String fileRM = this.filesList.get(1);
-    		out = new PrintWriter(new BufferedWriter(new FileWriter(fileRM)));
             fr = new FileReader(fileSM);
             br = new BufferedReader(fr);
             sc = new Scanner(br);
-            // Read and reduce in hashmap
-            Map<String,Integer> myMap = new HashMap<>();
+            
+            // Actual reduce
+            int count = 0;            
             while (sc.hasNextLine()){
                 line = sc.nextLine();
                 String[] splits = line.split(" ");
-                myMap.merge(splits[0], Integer.parseInt(splits[1]), Integer::sum);
+                if (splits[0].equals(this.reduceKey)) count++;
             }
-            for (String key : myMap.keySet())
-            	out.write(key+" "+myMap.get(key)+"\n");
+            // Print on RM file
+    		out = new PrintWriter(new BufferedWriter(new FileWriter(fileRM)));
+        	out.write(this.reduceKey+" "+count+"\n");        
+            out.close();
+            
             sc.close();
             br.close();
-            fr.close();            
-            out.close();
+            fr.close();
             checkResults(fileRM);
         }
     }

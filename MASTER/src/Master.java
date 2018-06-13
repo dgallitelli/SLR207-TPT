@@ -11,8 +11,9 @@ import java.util.Map;
 
 public class Master {
 	
-	private static String classroom = "c125";
-	private static int firstPC = 19;
+	private String classroom;
+	private int firstPC;
+	private String thisPC;
     private static String userPrefix = "dgallitelli@";
     private static String domain = ".enst.fr";
     private static String splitsPath = "/tmp/dgallitelli/splits/";
@@ -20,7 +21,9 @@ public class Master {
     private static String reducesPath = "/tmp/dgallitelli/reduces/";
     private static String slavePath = "/tmp/dgallitelli/Slave.jar";
 
-    private Master(){}
+    private Master() throws Exception {
+			setupFirstPC();
+    }
 
     public static void main(String[] args) throws IOException {
     	try {
@@ -29,20 +32,32 @@ public class Master {
 	        ms.newFoo(ifs.getFiles().keySet().size());
 	        return;
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return;
 		}
     }
+    
+    private void setupFirstPC() throws Exception {
+    	ProcessBuilder pb = new ProcessBuilder("hostname");
+    	Process p = pb.start();
+    	p.waitFor();
+    	
+    	BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        String[] machineInfo = input.readLine().split("-");
+        this.classroom = machineInfo[0];
+        this.firstPC = Integer.parseInt(machineInfo[1]);
+    }
 
     private void newFoo(int nMachines) throws Exception {
 
-        // Goal : Make Master copy three files from /tmp/dgallitelli/splits/ to 3 machines
         ProcessBuilder pb;
         Process p;
         BufferedReader input;
         String l, m;
         int i;
+        
+        // Define thisPC
+        this.thisPC = new StringBuilder("").append(this.classroom).append("-").append(firstPC).toString();
 
         // Define the target machines
         Map<String, Integer> mapMachinesID = new HashMap<>();
@@ -53,55 +68,17 @@ public class Master {
         Map<String, String> mapUMxMachines = new HashMap<>();
         for (int j = 0; j < nMachines; j++)
         	mapUMxMachines.put("UM"+j, new String(classroom+"-"+(firstPC+j)));
-        
 
         // Define the MR map
         Map<String, List<String>> mapKeysUMx = new HashMap<>();
+        
+        // Deploy Slave and files
+        new Deploy(this.thisPC, mapMachinesID);
 
         // Create the process for the creation of the folder, then copy
         for (String machine : mapMachinesID.keySet()) {
             m = String.format("%s%s%s", userPrefix, machine, domain);
             i = mapMachinesID.get(machine);
-
-            // Start connection process
-            System.out.println("[BEGIN] Starting connection to machine " + m);
-
-            // ProcessBuilder for checking connection with hostname
-            pb = new ProcessBuilder("ssh", m, "hostname");
-            pb.redirectErrorStream(true);
-            p = pb.start();
-            p.waitFor();
-            // Get output
-            input = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            l = input.readLine();
-            if (!l.equals(machine)) {
-                System.out.println("[ERR] Can't connect to machine " + m + " where l = "+l);
-                continue;
-            }
-            System.out.println("[OK] Connection available with machine " + m);
-            
-
-            // ProcessBuilder for mkdir
-            pb = new ProcessBuilder("ssh", m, "mkdir -p " + splitsPath+" "+mapsPath+" "+reducesPath);
-            pb.redirectErrorStream(true);
-            pb.start();
-            p.waitFor();
-            System.out.println("[OK] Created dir on machine " + m);
-
-            // ProcessBuilder for copying slavefile to remote
-            pb = new ProcessBuilder("scp", slavePath, m + ":" + slavePath);
-            pb.redirectErrorStream(true);
-            pb.start();
-            p.waitFor();
-            System.out.println("[OK] Copied slaveFile on machine " + m);
-
-            // ProcessBuilder for copying splitfile to remote
-            pb = new ProcessBuilder("scp", splitsPath+"S"+i+".txt",
-                    m + ":" + splitsPath);
-            pb.redirectErrorStream(true);
-            pb.start();
-            p.waitFor();
-            System.out.println("[OK] Copied targetFiles on machine " + m);
 
             // ProcessBuilder to run slave program in MAP MODE from /tmp/dgallitelli/
             pb = new ProcessBuilder("ssh", m, "java -jar "+slavePath+" 0 "+splitsPath+"S"+i+".txt");
@@ -150,7 +127,7 @@ public class Master {
 	            p = pb.start();
 	            p.waitFor();
 	        }
-	        System.out.println("[OK] SHUFFLE PHASE IS DONE - everything has been sent to machine "+reducerFull);
+	        // System.out.println("[OK] SHUFFLE PHASE IS DONE - everything has been sent to machine "+reducerFull);
 	        
 	        int reducerID = mapMachinesID.get(reducer);
 	        
@@ -163,12 +140,12 @@ public class Master {
 	        // Get the code of every mapper and build the argument
 	        for (String mapper : mappers)
 	        	UMPath.append(mapsPath).append(mapper).append(".txt ");
-	        System.out.println(UMPath.toString());
+	        //System.out.println(UMPath.toString());
 	        // Build the process and run it
 	        pb = new ProcessBuilder("ssh", reducerFull, "java -jar "+UMPath.toString());
             p = pb.start();
             p.waitFor();
-	        System.out.println("[OK] Launched Slave.jar REDUCE MODE on machine " + reducerFull);
+	        // System.out.println("[OK] Launched Slave.jar REDUCE MODE on machine " + reducerFull);
 	        
 	        // [REDUCE PHASE 2]
 	        // New process on target machine to run Slave in REDUCE MODE 2
@@ -178,11 +155,12 @@ public class Master {
 	        StringBuilder reduce2 = new StringBuilder();
 	        rmFilePath.append(reducesPath).append("RM").append(reducerID).append(".txt");
 	        reduce2.append(slavePath).append(" 1 ").append(reducekey).append(" ").append(mapsPath).append("SM").append(reducerID).append(".txt ").append(rmFilePath.toString());
-	        // Build the process and run it
-	        System.out.println(reduce2.toString());
+	        // Build the process and run it - don't need output here
+	        //System.out.println(reduce2.toString());
 	        pb = new ProcessBuilder("ssh", reducerFull, "java -jar "+reduce2.toString());
 	        p = pb.start();
-	        System.out.println("[OK] Launched Slave.jar REDUCE MODE 2 on machine " + reducerFull);
+            p.waitFor();
+	        // System.out.println("[OK] Launched Slave.jar REDUCE MODE 2 on machine " + reducerFull);
 	        
 	        // [EXTRACT RESULT FROM REDUCE MACHINE]
 	        pb = new ProcessBuilder("scp", reducerFull+":"+rmFilePath.toString(), reducesPath.substring(0, reducesPath.length()-1));
@@ -192,21 +170,21 @@ public class Master {
 	        	System.out.println("There was an error in copying file "+rmFilePath.toString()+" from machine "+reducerFull);
 	        	return;
 	        }
-	    	System.out.println("[OK] Obtained "+rmFilePath.toString()+" from machine "+reducerFull);
+	    	// System.out.println("[OK] Obtained "+rmFilePath.toString()+" from machine "+reducerFull);
 	    	
 	    	// [OPEN FILE, READ RESULTS INTO MAP]
 	        BufferedReader reader = new BufferedReader(new FileReader(rmFilePath.toString()));
 	        while ((l = reader.readLine()) != null) {
-	        	System.out.println(l);
+	        	// System.out.println("Read from rmFile: "+l);
 	        	String[] keyValue = l.split(" ");
 	        	finalMap.put(keyValue[0], Integer.parseInt(keyValue[1]));
 	        }
 	        reader.close();
 	        
+	        // [DELETE FILE, JUST TO AVOID PROBLEMS]
 	        File rm = new File(rmFilePath.toString());
 	        rm.delete();
 	        
-	        System.out.println(finalMap.toString());
         }
         
         // [PRINT FINALMAP WITH RESULTS]
