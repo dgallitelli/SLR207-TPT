@@ -53,8 +53,7 @@ public class Master {
         ProcessBuilder pb;
         Process p;
         BufferedReader input;
-        String l, m;
-        int i;
+        String l;
         
         // Define thisPC
         this.thisPC = new StringBuilder("").append(this.classroom).append("-").append(firstPC).toString();
@@ -74,25 +73,29 @@ public class Master {
         
         // Deploy Slave and files
         new Deploy(this.thisPC, mapMachinesID);
+        
+        // Get machines
+    	String[] machines = mapMachinesID.keySet().toArray(new String[mapMachinesID.keySet().size()]);
 
-        // Create the process for the creation of the folder, then copy
-        for (String machine : mapMachinesID.keySet()) {
-            m = String.format("%s%s%s", userPrefix, machine, domain);
-            i = mapMachinesID.get(machine);
-
-            // ProcessBuilder to run slave program in MAP MODE from /tmp/dgallitelli/
-            pb = new ProcessBuilder("ssh", m, "java -jar "+slavePath+" 0 "+splitsPath+"S"+i+".txt");
-            p = pb.start();
-            p.waitFor();
-            System.out.println("[OK] Launched slave.jar MAP MODE on machine " + m);
-            // Receive the output from the Slave currently running, update the map
-            input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        // [RUBN MULTIPLE SLAVES IN PARALLEL, MAP MODE]
+        ProcessBuilder[] mappersProcessBuilder = new ProcessBuilder[machines.length];
+        Process[] mappersProcess = new Process[machines.length];
+        for (int j = 0; j < machines.length; j++) {
+			mappersProcessBuilder[j] = new ProcessBuilder("ssh", machines[j], "java -jar "+slavePath+" 0 "+splitsPath+"S"+mapMachinesID.get(machines[j])+".txt");
+        	mappersProcess[j] = mappersProcessBuilder[j].start();
+        	System.out.println("[OK] Launched slave.jar MAP MODE on machine " + machines[j]);
+        }
+        // Wait for their completion and read the outputs
+        for (int j = 0; j < machines.length; j++) mappersProcess[j].waitFor();
+        // Receive the outputs of the mappers
+        for (int j = 0; j < machines.length; j++) {
+            input = new BufferedReader(new InputStreamReader(mappersProcess[j].getInputStream()));
             while ((l = input.readLine()) != null) {
                 if (mapKeysUMx.containsKey(l)) {
-                    mapKeysUMx.get(l).add("UM" + mapMachinesID.get(machine));
+                    mapKeysUMx.get(l).add("UM" + mapMachinesID.get(machines[j]));
                 } else {
                     List<String> newList = new ArrayList<>();
-                    newList.add("UM" + mapMachinesID.get(machine));
+                    newList.add("UM" + mapMachinesID.get(machines[j]));
                     mapKeysUMx.put(l, newList);
                 }
             }
