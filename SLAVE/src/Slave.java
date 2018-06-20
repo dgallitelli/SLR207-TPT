@@ -74,6 +74,7 @@ public class Slave {
                 line = sc.nextLine();
                 items = line.split(" ");
                 for (String item : items) {
+                	if (item.equals("")) continue;
                 	out.println(item+" "+1);
                 	keys.add(item);
                 }
