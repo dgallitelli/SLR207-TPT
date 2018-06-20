@@ -15,25 +15,26 @@ public class InitFiles {
 	static String slavePath = "/cal/homes/dgallitelli/SLR207-TPT/SLAVE/out/artifacts/Slave/Slave.jar";
 	static long maxFileSize = 5*1024; //Max file size = 20KB
 	
-	public InitFiles() throws Exception {
-		files.put(0, "Deer Beer River");
-		files.put(1, "Car Car River");
-		files.put(2, "Deer Car Beer");
-		files.put(3, "Beer Car River");
-		
-		createFolders();
-		
-		// Create the splits files
-		for (int i : files.keySet()) {
-			writer = new PrintWriter(rootPath+"splits/S"+i+".txt", "UTF-8");
-			writer.write(files.get(i)+"\n");
-			writer.close();
-		}
-	}
+	public InitFiles() {}
 	
-	public InitFiles(String _inputPath) throws IOException {
+	public InitFiles(String _inputPath) throws IOException {		
 		
 		createFolders();
+		
+		if (_inputPath.equals("")) {
+			// No files provided - test
+			files.put(0, "Deer Beer River");
+			files.put(1, "Car Car River");
+			files.put(2, "Deer Car Beer");
+			files.put(3, "Beer Car River");
+			
+			// Create the splits files
+			for (int i : files.keySet()) {
+				writer = new PrintWriter(rootPath+"splits/S"+i+".txt", "UTF-8");
+				writer.write(files.get(i)+"\n");
+				writer.close();
+			}			
+		}
 		
 		// Check if the input is a folder or a file
 		File inputPath = new File(_inputPath);
