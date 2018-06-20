@@ -1,9 +1,11 @@
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 public class InitFiles {
 	
@@ -11,6 +13,7 @@ public class InitFiles {
 	Map<Integer, String> files = new HashMap<>();
 	static String rootPath = "/tmp/dgallitelli/";
 	static String slavePath = "/cal/homes/dgallitelli/SLR207-TPT/SLAVE/out/artifacts/Slave/Slave.jar";
+	static long maxFileSize = 5*1024; //Max file size = 20KB
 	
 	public InitFiles() throws Exception {
 		files.put(0, "Deer Beer River");
@@ -28,24 +31,36 @@ public class InitFiles {
 		}
 	}
 	
-	public InitFiles(String _folder) throws Exception {
+	public InitFiles(String _inputPath) throws IOException {
 		
 		createFolders();
 		
-		File folder = new File(_folder);
-		// In case folder is provided, copy files and rename them
-	    File[] _files = folder.listFiles();
-	    if(_files!=null) {
-	    	int i = 0;
-	        for(File f: _files) {
-	        	Files.copy(f.toPath(), new File(rootPath+"splits/S"+i+".txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
-	        	files.put(i, "");
-	        	i++;
-	        }
-	    }
+		// Check if the input is a folder or a file
+		File inputPath = new File(_inputPath);
+		if (inputPath.isDirectory()) {
+			// Handle directory given as path
+		    File[] _files = inputPath.listFiles();
+		    if(_files!=null) {
+		    	int i = 0;
+		        for(File f: _files) {
+		        	copyTmpAndUpdateMap(f, i);
+		        	i++;
+		        }
+		    }
+		} else {
+			// Handle the file case
+			long fileSize = inputPath.length();
+			if (fileSize > 10*1024) {
+				// TODO: case of big file, split it and run it
+				generateSmallerFiles(inputPath);
+			} else {
+				// Single small file - map it on one PC
+				copyTmpAndUpdateMap(inputPath, 0);
+			}
+		}
 	}
 	
-	private void createFolders() throws Exception {
+	private void createFolders() throws IOException {
 		
 		// Create root dir if not existing
 		File rootFolder = new File(rootPath); 
@@ -93,4 +108,23 @@ public class InitFiles {
 	    }
 	}
 
+	public void copyTmpAndUpdateMap(File f, int i) throws IOException {
+    	Files.copy(f.toPath(), new File(rootPath+"splits/S"+i+".txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+    	files.put(i, "");		
+	}
+	
+	public void generateSmallerFiles(File f) throws IOException {
+		long nFiles = f.length()/maxFileSize;
+		Scanner sc = new Scanner(f);
+		for (int i = 0; i < nFiles; i++) {
+			File sFile = new File(rootPath+"splits/S"+i+".txt");
+			writer = new PrintWriter(sFile.toString(), "UTF-8");
+			while (sc.hasNext()) {
+				writer.write(sc.next());
+				if (sFile.length() >= maxFileSize) break;
+			}
+			writer.close();
+		}
+		sc.close();
+	}
 }
