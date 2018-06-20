@@ -23,9 +23,9 @@ public class InitFiles {
 		
 		if (_inputPath.equals("")) {
 			// No files provided - test
-			files.put(0, "Deer Beer River");
+			files.put(0, "Deer Beer River Cat");
 			files.put(1, "Car Car River");
-			files.put(2, "Deer Car Beer");
+			files.put(2, "Deer Car Beer Cat");
 			files.put(3, "Beer Car River");
 			
 			// Create the splits files
@@ -62,9 +62,10 @@ public class InitFiles {
 	}
 	
 	private void createFolders() throws IOException {
+		File rootFolder = new File(rootPath);
+		deleteFolder(rootFolder);
 		
 		// Create root dir if not existing
-		File rootFolder = new File(rootPath); 
 		if (!rootFolder.exists())
 			rootFolder.mkdir();
 		

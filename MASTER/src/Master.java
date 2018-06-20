@@ -192,46 +192,48 @@ public class Master {
         // Iterator on key per machine
         
         // [REDUCE PHASE 1]
-//        for (int k = 0; k < machineKeysMap.size(); k++) {
-//	        for (String m : machineKeysMap.keySet()) {
-//	        	// For every machine, run a parallel process to reduce on the first key assigned to it
-//	        	String reducekey = machineKeysMap.get(m).get(k);
-//	        	String reducerID = machinesIDMap.get(m).toString();
-//	        	String reducerFull = String.format("%s%s%s", userPrefix, m, domain);
-//		        // Create string for the command
-//		        StringBuilder UMPath = new StringBuilder();
-//		        UMPath.append(slavePath).append(" 1 ").append(reducekey).append(" ").append(mapsPath).append("SM")
-//		        		.append(reducerID).append(".txt ");
-//		        for (String mapper : keysUMxMap.get(reducekey)) UMPath.append(mapsPath).append(mapper).append(".txt ");
-//		        // [LAUNCH REDUCE PHASE 1]
-//		        listRPBs.add(new ProcessBuilder("ssh", reducerFull, "java -jar "+UMPath.toString()));
-//	        }
-//	        for (ProcessBuilder pb : listRPBs) listRPs.add(pb.start());
-//	        for (Process p : listRPs) p.waitFor();
-//        }
-//        
-//        // [REDUCE PHASE 2]
-//        for (int k = 0; k < keys.length; k++) {
-//	        for (String m : machineKeysMap.keySet()) {
-//	        	// For every machine, run a parallel process to reduce on the first key assigned to it
-//	        	String reducekey = machineKeysMap.get(m).get(k);
-//	        	String reducerID = machinesIDMap.get(m).toString();
-//	        	String reducerFull = String.format("%s%s%s", userPrefix, m, domain);
-//		        // Create string for the command
-//		        StringBuilder rmFilePath = new StringBuilder();
-//		        StringBuilder reduce2 = new StringBuilder();
-//		        rmFilePath.append(reducesPath).append("RM").append(reducerID).append(".txt");
-//		        reduce2.append(slavePath).append(" 2 ").append(reducekey).append(" ").append(mapsPath).append("SM")
-//		        		.append(reducerID).append(".txt ").append(rmFilePath.toString());
-//		        // [LAUNCH REDUCE PHASE 2]
-//		        listRPBs.add(new ProcessBuilder("ssh", reducerFull, "java -jar "+reduce2.toString()));
-//	        }
-//	        for (ProcessBuilder pb : listRPBs) listRPs.add(pb.start());
-//	        for (Process p : listRPs) p.waitFor();
-//        }
+        for (int k = 0; k < machineKeysMap.size(); k++) {
+	        for (String m : machineKeysMap.keySet()) {
+	        	if (k>=machineKeysMap.get(m).size()) continue;
+	        	// For every machine, run a parallel process to reduce on the first key assigned to it
+	        	String reducekey = machineKeysMap.get(m).get(k);
+	        	String reducerID = machinesIDMap.get(m).toString();
+	        	String reducerFull = String.format("%s%s%s", userPrefix, m, domain);
+		        // Create string for the command
+		        StringBuilder UMPath = new StringBuilder();
+		        UMPath.append(slavePath).append(" 1 ").append(reducekey).append(" ").append(mapsPath).append("SM")
+		        		.append(reducerID).append(".txt ");
+		        for (String mapper : keysUMxMap.get(reducekey)) UMPath.append(mapsPath).append(mapper).append(".txt ");
+		        // [LAUNCH REDUCE PHASE 1]
+		        listRPBs.add(new ProcessBuilder("ssh", reducerFull, "java -jar "+UMPath.toString()));
+	        }
+	        for (ProcessBuilder pb : listRPBs) listRPs.add(pb.start());
+	        for (Process p : listRPs) p.waitFor();
+        }
+        
+        // [REDUCE PHASE 2]
+        for (int k = 0; k < keys.length; k++) {
+	        for (String m : machineKeysMap.keySet()) {
+	        	if (k>=machineKeysMap.get(m).size()) continue;
+	        	// For every machine, run a parallel process to reduce on the first key assigned to it
+	        	String reducekey = machineKeysMap.get(m).get(k);
+	        	String reducerID = machinesIDMap.get(m).toString();
+	        	String reducerFull = String.format("%s%s%s", userPrefix, m, domain);
+		        // Create string for the command
+		        StringBuilder rmFilePath = new StringBuilder();
+		        StringBuilder reduce2 = new StringBuilder();
+		        rmFilePath.append(reducesPath).append("RM").append(reducerID).append(".txt");
+		        reduce2.append(slavePath).append(" 2 ").append(reducekey).append(" ").append(mapsPath).append("SM")
+		        		.append(reducerID).append(".txt ").append(rmFilePath.toString());
+		        // [LAUNCH REDUCE PHASE 2]
+		        listRPBs.add(new ProcessBuilder("ssh", reducerFull, "java -jar "+reduce2.toString()));
+	        }
+	        for (ProcessBuilder pb : listRPBs) listRPs.add(pb.start());
+	        for (Process p : listRPs) p.waitFor();
+        }
         
         
-        for (int i = 0; i < nReducers; i++) {
+        /*for (int i = 0; i < nReducers; i++) {
         	// Get key & reducer info
         	String reducekey = keys[i];
         	int reducerID = i%nReducers;
@@ -264,7 +266,7 @@ public class Master {
 	        reducersProcessBuilder[i] = new ProcessBuilder("ssh", reducerFull, "java -jar "+reduce2.toString());
 	        reducersProcess[i] = reducersProcessBuilder[i].start();
         }
-        for (int i = 0; i < nReducers; i++) reducersProcess[i].waitFor();
+        for (int i = 0; i < nReducers; i++) reducersProcess[i].waitFor();*/
 	        
         for (int i = 0; i < nReducers; i++) {
         	// Get key & reducer info
